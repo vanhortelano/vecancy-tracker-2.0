@@ -1,0 +1,19 @@
+/* brand.css — the Vacancy Tracker logo on every page, and the page name in the middle of the top bar.
+   The logo comes in a light-mode and a dark-mode version; the page shows the one that matches the theme.
+   Dark mode is set differently per page: data-theme="dark" (front page, sign-in, Super Admin, Marketing),
+   body.auth-dark (Branch Admin) and body.v-dark (Viewer). */
+
+.vt-lg{display:inline-flex;align-items:center;flex:none;line-height:0}
+.vt-lg img{display:block;height:100%;width:auto}
+.vt-lg .lg-d{display:none}
+:root[data-theme="dark"] .vt-lg .lg-l,body.auth-dark .vt-lg .lg-l,body.v-dark .vt-lg .lg-l{display:none}
+:root[data-theme="dark"] .vt-lg .lg-d,body.auth-dark .vt-lg .lg-d,body.v-dark .vt-lg .lg-d{display:block}
+
+/* the page name in the middle of the top bar, on the same row as the menu button
+   (Branch Admin, Super Admin, Viewer, Marketing; hidden on narrow screens, where the page title is enough) */
+.topbar-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:9px;
+  padding:5px 15px 5px 7px;border-radius:30px;font:700 15px 'Space Grotesk','DM Sans',sans-serif;letter-spacing:.2px;white-space:nowrap;pointer-events:none;
+  background:rgba(49,46,129,.07);border:1px solid rgba(49,46,129,.16);color:#312e81;z-index:1}
+.topbar-center .vt-lg{height:26px}
+:root[data-theme="dark"] .topbar-center,body.auth-dark .topbar-center,body.v-dark .topbar-center{color:#e0dcff;background:rgba(108,92,231,.16);border-color:rgba(167,139,250,.3)}
+@media (max-width:900px){.topbar-center{display:none}}

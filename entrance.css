@@ -1,0 +1,66 @@
+/* entrance.css — the short cinematic intro shown when Branch Admin, Viewer, Super Admin or Marketing opens,
+   and the small "opening the sign-in page" card shown while a signed-out visitor is sent to the front page. */
+
+#vtEntrance{position:fixed;inset:0;z-index:2147483000;pointer-events:auto;cursor:default;
+  --vte-speed:1;--vte-bg:#070a12;--vte-ink:#eef2ff;--vte-soft:#97a3ba;--vte-acc:#7c6cf0;
+  font-family:'DM Sans',system-ui,sans-serif;color:var(--vte-ink)}
+#vtEntrance.short{--vte-speed:.6}
+#vtEntrance .vte-half{position:absolute;left:0;right:0;height:50.5%;overflow:hidden;background:var(--vte-bg);
+  transition:transform calc(.75s * var(--vte-speed)) cubic-bezier(.77,0,.18,1)}
+#vtEntrance .vte-half::after{pointer-events:none;content:"";position:absolute;inset:0;opacity:.07;mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+#vtEntrance .vte-top{top:0}
+#vtEntrance .vte-bot{bottom:0}
+#vtEntrance .vte-seam{position:absolute;left:50%;top:50%;height:1px;width:0;transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,var(--vte-acc) 20%,#c7bfff 50%,var(--vte-acc) 80%,transparent);
+  box-shadow:0 0 18px 2px rgba(124,108,240,.55);
+  transition:width calc(.6s * var(--vte-speed)) cubic-bezier(.2,.8,.2,1),opacity calc(.4s * var(--vte-speed))}
+#vtEntrance .vte-up,#vtEntrance .vte-down{position:absolute;left:50%;transform:translateX(-50%);text-align:center;width:min(640px,calc(100vw - 32px))}
+#vtEntrance .vte-up{bottom:22px}
+#vtEntrance .vte-down{top:14px}
+/* the Vacancy Tracker logo: it pops in, then settles */
+#vtEntrance .vte-mark{display:block;width:max-content;margin:0 auto 20px;line-height:0}
+#vtEntrance .vte-mark img{display:block;height:74px;width:auto;transform:scale(.55) rotate(-25deg);opacity:0;
+  transition:transform calc(.6s * var(--vte-speed)) cubic-bezier(.3,1.4,.5,1),opacity calc(.35s * var(--vte-speed))}
+#vtEntrance.go .vte-mark img{transform:none;opacity:1}
+#vtEntrance .vte-title{display:block;overflow:hidden;font:700 clamp(34px,6vw,58px)/1.05 'Space Grotesk','DM Sans',sans-serif;letter-spacing:-.02em}
+#vtEntrance .vte-title span{display:inline-block;transform:translateY(105%);
+  transition:transform calc(.7s * var(--vte-speed)) cubic-bezier(.2,.8,.2,1) calc(.22s * var(--vte-speed))}
+#vtEntrance .vte-sub{margin:0;font-size:15px;color:var(--vte-soft);opacity:0;transform:translateY(8px);
+  transition:opacity calc(.5s * var(--vte-speed)) calc(.5s * var(--vte-speed)),transform calc(.5s * var(--vte-speed)) calc(.5s * var(--vte-speed))}
+#vtEntrance .vte-who{display:inline-block;margin-top:14px;padding:5px 12px;border:1px solid rgba(255,255,255,.12);border-radius:30px;font-size:13px;color:var(--vte-soft);opacity:0;
+  transition:opacity calc(.5s * var(--vte-speed)) calc(.65s * var(--vte-speed))}
+#vtEntrance .vte-who:empty{display:none}
+#vtEntrance.go .vte-title span{transform:none}
+#vtEntrance.go .vte-sub{opacity:1;transform:none}
+#vtEntrance.go .vte-who{opacity:1}
+#vtEntrance.go .vte-seam{width:min(760px,90vw)}
+/* the reveal: the seam opens like a curtain */
+#vtEntrance.open{pointer-events:none}
+#vtEntrance.open .vte-top{transform:translateY(-101%)}
+#vtEntrance.open .vte-bot{transform:translateY(101%)}
+#vtEntrance.open .vte-seam{width:100vw;opacity:0}
+#vtEntrance .vte-skip{position:absolute;right:18px;bottom:16px;border:0;background:none;color:var(--vte-soft);font:500 12.5px 'DM Sans',sans-serif;cursor:pointer;opacity:.7}
+#vtEntrance .vte-skip:hover{opacity:1;color:var(--vte-ink)}
+/* light mode: the same intro on a light background */
+#vtEntrance.light{--vte-bg:#f4f6fb;--vte-ink:#131a2b;--vte-soft:#5b6680;--vte-acc:#5b4fe0}
+#vtEntrance.light .vte-half::after{mix-blend-mode:multiply;opacity:.05}
+#vtEntrance.light .vte-seam{background:linear-gradient(90deg,transparent,var(--vte-acc) 20%,#8b7ff5 50%,var(--vte-acc) 80%,transparent);box-shadow:0 0 18px 2px rgba(91,79,224,.35)}
+#vtEntrance.light .vte-who{border-color:rgba(19,26,43,.14)}
+#vtEntrance.open .vte-skip{opacity:0}
+@media (prefers-reduced-motion:reduce){
+  #vtEntrance *{transition-duration:.01s!important;transition-delay:0s!important}
+  #vtEntrance{transition:opacity .25s}
+  #vtEntrance.open{opacity:0}
+}
+
+/* signed-out visitors: shown for a moment while the page sends them to the front page */
+.vt-gate{min-height:100vh;display:grid;place-items:center;padding:20px;background:#0b0f1a;color:#e6eaf5;font-family:'DM Sans',system-ui,sans-serif}
+.vt-gate[hidden]{display:none!important}
+.vt-gate-card{text-align:center;max-width:420px;opacity:0;animation:vtGateIn .4s ease .7s forwards}
+.vt-gate-card p{margin:14px 0 6px;font-size:15px}
+.vt-gate-card a{color:#a5b4fc;font-weight:600}
+.vt-gate-card #authMount{margin-top:16px;text-align:left}
+.vt-gate-spin{width:28px;height:28px;margin:0 auto;border-radius:50%;border:3px solid rgba(255,255,255,.15);border-top-color:#7c6cf0;animation:vtGateSpin .8s linear infinite}
+@keyframes vtGateIn{to{opacity:1}}
+@keyframes vtGateSpin{to{transform:rotate(360deg)}}

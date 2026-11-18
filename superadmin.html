@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Admin — Dormitory Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="central-ui.css">
+<link rel="stylesheet" href="menu.css">
+<link rel="stylesheet" href="datepick.css">
+<link rel="stylesheet" href="auth-ui.css">
+<link rel="stylesheet" href="ai-chat.css">
+<link rel="stylesheet" href="tutorial.css">
+<link rel="stylesheet" href="entrance.css">
+<link rel="stylesheet" href="brand.css">
+<link rel="icon" type="image/png" href="assets/brand/mark-light.png">
+</head>
+<body>
+<script src="entrance.js" data-title="Super Admin" data-sub="Every branch in one view"></script>
+
+<!-- sign in -->
+<!-- Sign-in happens once on the front page (index.html). Signed-out visitors are sent there automatically. -->
+<div class="vt-gate" id="authView" hidden>
+  <div class="vt-gate-card">
+    <div class="vt-gate-spin" aria-hidden="true"></div>
+    <p>Opening the sign-in page…</p>
+    <a href="index.html">Go to sign in</a>
+    <div id="authMount"></div>
+  </div>
+</div>
+
+<div style="min-height:100vh;display:grid;place-items:center;padding:20px" id="busyView" hidden>
+  <div class="notice"><div class="spin" aria-hidden="true"></div><h1 style="font-size:20px;margin-top:16px">Signing you in…</h1><p class="det" id="busyText" style="margin-top:8px"></p></div>
+</div>
+
+<div style="min-height:100vh;display:grid;place-items:center;padding:20px" id="joinView" hidden>
+  <div class="notice"><h1 style="font-size:24px">Create your Super Admin account</h1><p class="det" id="joinText" style="margin:10px 0 18px"></p>
+    <button class="btn pri full" id="joinBtn" type="button">Activate Super Admin access</button>
+    <button class="btn full" id="joinOut" type="button" style="margin-top:10px">Sign out</button>
+    <p class="det" style="margin-top:14px">You will only see and manage dormitories you connect yourself. A branch shares nothing until its own Branch Admin approves.</p></div>
+</div>
+
+<!-- signed in but not allowed / setup problem -->
+<div style="min-height:100vh;display:grid;place-items:center;padding:20px" id="deniedView" hidden>
+  <div class="notice">
+    <h1 id="deniedTitle">Not a Super Admin</h1>
+    <p class="det" id="deniedText" style="margin-top:10px"></p>
+    <code class="uid" id="deniedUid"></code>
+    <button class="btn full" id="deniedOut" type="button" style="margin-top:10px">Sign out</button>
+  </div>
+</div>
+
+<!-- dashboard -->
+<div class="shell" id="dash" hidden>
+  <aside class="side">
+    <div class="brand"><span class="logo has-lg" id="sideLogo"><span class="vt-lg" aria-hidden="true"><img class="lg-l" src="assets/brand/mark-light.webp" alt=""><img class="lg-d" src="assets/brand/mark-dark.webp" alt=""></span></span><div><b>TERRINSPROJECT</b><small>Super Admin</small></div></div>
+    <nav class="nav" id="nav"></nav>
+    <span class="sp"></span>
+    <div class="me" id="who"></div>
+  </aside>
+  <div class="main">
+    <header class="bar">
+      <button class="menu-btn mx-logo" type="button" data-menu-toggle aria-label="Menu" title="Menu"><span></span><span></span><span></span></button>
+      <h1 id="title">Overview</h1><span class="sp"></span>
+      <div class="topbar-center" aria-label="Super Admin"><span class="vt-lg" aria-hidden="true"><img class="lg-l" src="assets/brand/mark-light.webp" alt=""><img class="lg-d" src="assets/brand/mark-dark.webp" alt=""></span>Super Admin</div>
+      <span class="live"><i></i>Live</span>
+      <button class="btn theme-btn" id="themeB" type="button" aria-label="Toggle theme"></button>
+      <button class="btn sm" id="outBtn" type="button">Sign out</button>
+    </header>
+    <div class="page">
+      <section id="tab-overview"></section>
+      <section id="tab-dorms" hidden>
+        <div class="panel">
+          <h2>Connect an existing dormitory</h2>
+          <p class="sub">Ask the Branch Admin for a one-time pairing code (Central Link tab). They then approve <b>Directory</b>, <b>Analytics</b> and <b>Room status &amp; dorm view</b> separately. The consent shows your name as the sender. Their password is never shared.</p>
+          <div class="grid3">
+            <div class="field"><label for="reqName">Name of the super admin</label><input id="reqName" maxlength="80" placeholder="Your name (shown to the Branch Admin)" autocomplete="name"></div>
+            <div class="field"><label for="pairCode">Pairing code</label><input id="pairCode" placeholder="K7M2-9QXA" autocomplete="off" style="text-transform:uppercase;letter-spacing:2px"></div>
+            <div class="field"><label for="purpose">Purpose of the request</label><input id="purpose" placeholder="Why you want to connect"></div>
+          </div>
+          <button class="btn pri" id="connectBtn" type="button" style="margin-top:16px">Connect server</button>
+          <div class="msg" id="connMsg" role="status"></div>
+        </div>
+        <div class="field" style="margin:18px 0 4px;max-width:420px"><label for="dormQ">Search dormitories</label><input id="dormQ" type="search" placeholder="Type a dormitory name or city" autocomplete="off"></div>
+        <div id="cards"></div>
+      </section>
+      <section id="tab-trading" hidden>
+        <div class="stats" id="trStats"></div>
+        <div class="panel">
+          <div class="tr-head"><div><h2>Vacancy analytics</h2><p class="sub">How many beds are empty in each dormitory over time, and what is expected next.</p></div>
+            <div class="tr-head-r"><select id="trMetric" aria-label="Chart metric"></select><button class="tr-help" id="trHelp" type="button" aria-label="How to read this chart" title="How to read this chart">?</button></div></div>
+          <div class="tools" id="trTf" role="group" aria-label="Timeframe"></div>
+          <div class="tools" id="trCustom" hidden><label class="det" for="trFrom">From</label><input type="date" id="trFrom"><label class="det" for="trTo">To</label><input type="date" id="trTo"><button class="btn sm pri" id="trApply" type="button">Apply</button></div>
+          <div class="tools" id="trBranches" hidden></div>
+          <div class="risk-box" id="trRisk"></div>
+          <div class="tools tr-levels" id="trKey" role="group" aria-label="Show dormitories by risk level"></div>
+          <div class="tools" id="trLegend"></div>
+          <div class="chartwrap"><canvas id="trCanvas" aria-label="Vacancy chart"></canvas></div>
+          <div class="tr-toolbar" role="toolbar" aria-label="Chart controls">
+            <div class="tr-grp"><span class="tr-lbl">Zoom</span><div class="tr-seg"><button class="btn sm" id="trOut" type="button" title="Zoom out">−</button><button class="btn sm" id="trIn" type="button" title="Zoom in">+</button><button class="btn sm" id="trReset" type="button">Latest</button></div></div>
+            <div class="tr-grp"><label class="tr-lbl" for="trJump">Go to date</label><div class="tr-seg"><input type="date" id="trJump" aria-label="Jump to a date"><button class="btn sm" id="trToday" type="button">Today</button></div></div>
+            <div class="tr-grp"><label class="tr-lbl" for="trStyle">Style</label><select id="trStyle" class="tr-select" aria-label="Chart style"><option value="line">Line</option><option value="candle">Candles (OHLC)</option></select></div>
+            <div class="tr-grp"><label class="tr-lbl" for="trInterval">Candle interval</label><select id="trInterval" class="tr-select" aria-label="Candle interval"><option value="second">Every second</option><option value="minute">Every minute</option><option value="hour">Hourly</option><option value="day">Daily</option><option value="week">Weekly</option><option value="month">Monthly</option><option value="year">Yearly</option></select></div>
+          </div>
+          <div class="tr-scrollrow"><span class="det">Older</span><input type="range" id="trScroll" min="0" max="1000" value="500" aria-label="Scroll through time"><span class="det">Newer</span></div>
+          <div class="tr-notes" hidden><p class="det" id="trAxisNote"></p><p class="det" id="trNote"></p></div>
+        </div>
+      </section>
+      <section id="tab-inbox" hidden></section>
+      <section id="tab-accounts" hidden></section>
+      <section id="tab-server" hidden></section>
+      <section id="tab-security" hidden></section>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="sqlstore.js"></script>
+<script src="mode.js"></script>
+<script src="api-base.js"></script>
+<script src="auth-ui.js"></script>
+<script src="central-ui.js"></script>
+<script src="vacancy-core.js"></script>
+<script src="central-chart.js"></script>
+<script src="js/proof.js"></script>
+<script src="assistant.js"></script>
+<script type="module">
+import {getFirestore,doc,getDoc,setDoc,deleteDoc,collection,onSnapshot,query,orderBy,limit,where,getDocs,Timestamp,addDoc,updateDoc,writeBatch,serverTimestamp} from "./sqlstore-modular.js";
+
+const {$,esc,icon,toast,ask,when,ago,isStale,kind,pct,dormCard}=CUI;
+const show=v=>{["authView","deniedView","dash","busyView","joinView"].forEach(id=>$(id).hidden=id!==v);if(v==="dash")$("dash").style.display=""};
+const say=(el,t,err)=>{el.textContent=t;el.classList.toggle("err",!!err)};
+
+CUI.theme($("themeB"));
+addEventListener("unhandledrejection",e=>toast("Error: "+((e.reason&&(e.reason.code||e.reason.message))||e.reason),1));
+addEventListener("error",e=>toast("Error: "+e.message,1));
+
+
+const cfg=window.FIREBASE_CONFIG;
+const db=getFirestore();   // SQL-backed data client; Firebase is used for sign-in only
+let auth=null;
+SQLSTORE.setTokenProvider(()=>VecancyAuth.token());
+let user=null,unsubs=[],branches=[],dir={},audit=[],loaded=false,painted=false,tab="overview";
+
+/* ---------- sign in (shared username + password login) ---------- */
+const out=()=>VecancyAuth.signOut();$("outBtn").onclick=out;$("deniedOut").onclick=out;
+
+async function onUser(u){
+  stopAll();user=u;
+  show("busyView");$("busyText").textContent="Signed in as "+(u.email||"your account")+". Checking Super Admin access…";
+  try{
+    const s=await Promise.race([getDoc(doc(db,"superAdmins",u.uid)),new Promise((_,rej)=>setTimeout(()=>rej({code:"timed-out"}),15000))]);
+    if(!s.exists()){$("joinText").textContent="You're signed in as "+(u.email||"your account")+". Activate Super Admin access to connect and manage your own dormitories.";return show("joinView")}
+  }catch(e){
+    const code=e.code||e.message;
+    $("deniedTitle").textContent="Could not check access";
+    $("deniedText").textContent=code==="permission-denied"
+      ?"Your sign-in worked, but this account is not allowed to open the Super Admin area."
+      :"Could not reach the server ("+code+"). Check your internet, VPN or ad blocker, then sign out and try again.";
+    $("deniedUid").hidden=true;
+    return show("deniedView");
+  }
+  enter(u);
+}
+function onSignedOut(){stopAll();user=null;if(window.resetAssistantForUserChange)resetAssistantForUserChange();show("authView")}
+/* ---------- Assistant (same widget as the Branch Admin page; hidden until the dashboard is open) ---------- */
+window.VT_AI_PAGE={page:"superadmin",uid:()=>user&&user.uid,token:()=>VecancyAuth.token(),tab:()=>tab,
+  tabLabel:()=>{const t=TABS.find(x=>x[0]===tab);return t?"Super Admin · "+t[2]:"Super Admin"},
+  tips:["Which dorm has the highest vacancy?","Report the vacancy of the dorms","Take me to the analytics"],
+  visible:()=>!!user&&!$("dash").hidden,
+  onNav:nav=>{if(nav.tab&&TABS.some(x=>x[0]===nav.tab)){if(tab==="inbox")localStorage.setItem("inboxSeen",String(Date.now()));tab=nav.tab;render();scrollTo({top:0,behavior:"smooth"})}
+    if(typeof nav.search==="string"){$("dormQ").value=nav.search;render();const q=$("dormQ");q.classList.add("assistant-spotlight");setTimeout(()=>q.classList.remove("assistant-spotlight"),2600)}}};
+setTimeout(initializeAssistantWidget,0);   // after the whole module (TABS etc.) is defined
+VecancyAuth.init({mount:"#authMount",onUser,onSignedOut});
+auth=VecancyAuth.auth;
+if(!auth)show("authView");
+$("dormQ").addEventListener("input",()=>render());
+$("joinOut").onclick=()=>VecancyAuth.signOut();
+$("joinBtn").onclick=async()=>{try{await setDoc(doc(db,"superAdmins",user.uid),{email:user.email||"",createdAt:serverTimestamp()});enter(user)}catch(e){toast("Could not activate: "+(e.code||e.message),1)}};
+function enter(u){
+  $("who").textContent=u.email||"Signed in";
+  try{if(!$("reqName").value)$("reqName").value=localStorage.getItem("saReqName")||""}catch(e){}
+  try{show("dash");startAll();render()}
+  catch(x){$("deniedTitle").textContent="Display error";$("deniedText").textContent="Signed in, but the dashboard failed to draw: "+(x.message||x);$("deniedUid").hidden=true;$("deniedSteps").hidden=true;show("deniedView")}
+}
+
+/* ---------- live data ---------- */
+function stopAll(){Object.values(rmUn).forEach(f=>f());rmUn={};roomCopies={};unsubs.forEach(f=>f());unsubs=[];cUn.forEach(f=>f());cUn=[];chUn.forEach(f=>f());chUn=[];watchChanges.k="";central=null;cViewers=[];cBlocked=[];chg={};branches=[];dir={};audit=[];loaded=false;painted=false;clearInterval(trTimer)}
+function startAll(){
+  unsubs.push(onSnapshot(query(collection(db,"branches"),where("requestedBy","==",user.uid)),snap=>{branches=snap.docs.map(d=>({id:d.id,...d.data()}));loaded=true;watchChanges();watchRooms();render()},e=>{loaded=true;say($("connMsg"),"Cannot read branches: "+(e.code||e.message),1);render()}));
+  unsubs.push(onSnapshot(collection(db,"directory"),snap=>{dir={};snap.docs.forEach(d=>dir[d.id]=d.data());render()},()=>{}));
+  unsubs.push(onSnapshot(query(collection(db,"audit"),where("targetAdmin","==",user.uid),limit(200)),snap=>{const n=Date.now(),ms=x=>x&&x.toMillis?x.toMillis():n;audit=snap.docs.map(d=>d.data()).sort((a,b)=>ms(b.at)-ms(a.at)).slice(0,60);render()},()=>{}));
+  unsubs.push(onSnapshot(query(collection(db,"centralAccess"),where("ownerUid","==",user.uid)),snap=>{const d=snap.docs[0];central=d?{code:d.id,...d.data()}:null;watchCentral();render()},()=>{}));
+}
+const log=(action,branch,detail)=>addDoc(collection(db,"audit"),{targetAdmin:user.uid,actorUid:user.uid,actorEmail:user.email||"",action,branch:branch||"",detail:detail||"",at:serverTimestamp()}).catch(()=>{});
+
+/* ---------- connect / disconnect ---------- */
+$("connectBtn").onclick=async()=>{
+  const code=$("pairCode").value.trim().toUpperCase(),purpose=$("purpose").value.trim(),btn=$("connectBtn"),reqName=$("reqName").value.trim();
+  if(!reqName)return say($("connMsg"),"Enter your name. The Branch Admin sees it on the consent.",1);
+  if(!code)return say($("connMsg"),"Enter the pairing code.",1);
+  if(!purpose)return say($("connMsg"),"Enter a purpose for the request.",1);
+  btn.disabled=true;say($("connMsg"),"Connecting…");
+  try{
+    const p=await getDoc(doc(db,"pairing",code));
+    if(!p.exists())return say($("connMsg"),"Code not found, already used, or expired.",1);
+    const d=p.data();
+    if(d.expiresAt.toMillis()<Date.now())return say($("connMsg"),"That code has expired. Ask the Branch Admin for a new one.",1);
+    if(branches.some(b=>b.id===d.ownerUid))return say($("connMsg"),"This dormitory is already connected. Disconnect it first to send a new request.",1);
+    await setDoc(doc(db,"branches",d.ownerUid),{ownerUid:d.ownerUid,dormName:d.dormName,location:d.location||"",purpose,requesterName:reqName,pairingCode:code,requestedBy:user.uid,dirStatus:"pending",analyticsStatus:"pending",roomStatus:"pending",createdAt:serverTimestamp()});
+    try{localStorage.setItem("saReqName",reqName)}catch(e){}
+    await deleteDoc(doc(db,"pairing",code)).catch(()=>{});
+    log("CONNECTION_REQUESTED",d.dormName,purpose);
+    $("pairCode").value="";$("purpose").value="";say($("connMsg"),"");
+    toast("Request sent to "+d.dormName);
+  }catch(e){say($("connMsg"),"Could not connect: "+(e.code||e.message),1)}
+  finally{btn.disabled=false}
+};
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-off]");if(!b)return;
+  const br=branches.find(x=>x.id===b.dataset.off);if(!br)return;
+  if(!await ask("Disconnect "+br.dormName+"?","Its directory listing and analytics access stop immediately. A new request and pairing code are needed to reconnect.","Disconnect",true))return;
+  try{await deleteDoc(doc(db,"directory",br.id)).catch(()=>{});await deleteDoc(doc(db,"branches",br.id));log("DISCONNECTED",br.dormName,"");toast("Disconnected "+br.dormName)}catch(err){toast(err.code==="permission-denied"?"Permission denied. This account is not allowed to do that.":"Failed: "+(err.code||err.message),1)}
+});
+
+/* ---------- rendering ---------- */
+const TABS=[["overview","grid","Overview"],["dorms","building","Dormitories"],["trading","trend","Analytics"],["inbox","inbox","Inbox"],["accounts","users","Accounts"],["server","plug","Server Details"],["security","shield","Security"]];
+const label={approved:"Approved",pending:"Pending",rejected:"Rejected",revoked:"Revoked"};
+const live=b=>b.dirStatus==="approved"&&dir[b.id]?dir[b.id]:null;
+const group=b=>{const s=live(b);return s?kind(s.vacant):"off"};
+const statChip=(t,s)=>`<span class="chip ${s}">${t}: ${label[s]||esc(s)}</span>`;
+const roomSt=b=>b.roomStatus||"pending";
+const chips3=b=>`${statChip("Directory",b.dirStatus)} ${statChip("Analytics",b.analyticsStatus)} ${statChip("Room status",roomSt(b))}`;
+const foot=b=>`<div class="chips">${chips3(b)}</div><div class="foot"><span class="det">Requested ${when(b.createdAt)}</span><button class="btn sm danger" data-off="${esc(b.id)}">Disconnect</button></div>`;
+function offCard(b){
+  const t=b.dirStatus==="approved"?"Approved. Waiting for the first sync from the branch.":b.dirStatus==="pending"?"Waiting for the Branch Admin to decide.":"Directory permission "+(label[b.dirStatus]||b.dirStatus).toLowerCase()+". No vacancy data is shown.";
+  return `<article class="dc${painted?"":" rise"}"><div class="dhead"><div><h3>${esc(b.dormName)}</h3><div class="loc">${icon("pin")}${esc(b.location||"Location not provided")}</div></div></div><p class="det" style="margin:18px 0">${t}</p>${foot(b)}</article>`;
+}
+function render(){
+  if($("dash").hidden)return;
+  const pending=branches.filter(b=>b.dirStatus==="pending"||b.analyticsStatus==="pending"||roomSt(b)==="pending").length;
+  const inb=inboxItems(),unread=inb.filter(m=>m.at&&m.at.toMillis()>seenAt()).length+pendingChanges().length;
+  $("nav").innerHTML=TABS.map(([k,i,t])=>`<button data-tab="${k}" class="${tab===k?"on":""}">${icon(i)}${t}${k==="dorms"&&pending?`<span class="badge">${pending}</span>`:""}${k==="inbox"&&unread&&tab!=="inbox"?`<span class="badge">${unread}</span>`:""}</button>`).join("");
+  $("title").textContent=TABS.find(x=>x[0]===tab)[2];
+  TABS.forEach(([k])=>$("tab-"+k).hidden=k!==tab);
+
+  const sections=[["avail","Available vacancies"],["limited","Limited vacancies"],["full","Fully occupied"],["off","Awaiting approval, revoked or no data"]];
+  $("cards").innerHTML=!loaded?`<div class="cards"><div class="sk"></div><div class="sk"></div></div>`
+    :branches.length?(()=>{const term=($("dormQ").value||"").trim().toLowerCase(),hit=b=>!term||((b.dormName||"")+" "+(b.location||"")).toLowerCase().includes(term);
+      const html=sections.map(([k,t])=>{const l=branches.filter(b=>group(b)===k&&hit(b)).sort((a,b)=>((live(b)||{}).vacant||0)-((live(a)||{}).vacant||0));
+      return l.length?`<div class="sect">${t} · ${l.length}</div><div class="cards">${l.map(b=>k==="off"?offCard(b):dormCard(b,live(b),foot(b),!painted)).join("")}</div>`:""}).join("");
+      return html||`<div class="empty">${icon("building")}<div><b>No dormitory matches “${esc(term)}”</b></div>Clear the search to see every dormitory.</div>`})()
+    :`<div class="empty">${icon("building")}<div><b>No dormitories connected yet</b></div>Enter a pairing code above to send your first request.</div>`;
+  if(loaded)painted=true;
+
+  const L=branches.filter(b=>live(b)),sum=k=>L.reduce((a,b)=>a+(live(b)[k]||0),0),T=sum("total"),V=sum("vacant"),O=sum("occupied"),stale=L.filter(b=>isStale(live(b)));
+  const st=(i,c,n,t)=>`<div class="stat"><span class="ico ${c}">${icon(i)}</span><div><b>${n}</b><span>${t}</span></div></div>`;
+  const ovAll=branches.map(b=>({b,o:dormSummary(b)})),up=ovAll.reduce((n,x)=>n+(x.o&&x.o.full?x.o.upcoming:0),0),rsv=ovAll.reduce((n,x)=>n+(x.o?x.o.reserved:0),0);
+  const sc=$("tab-overview").querySelector(".ds-stack"),keep=sc?sc.scrollTop:0;
+  $("tab-overview").innerHTML=`<div class="stats ov-stats">${st("building","",branches.length,"Registered dormitories")}${st("inbox","g",L.length,"Publishing to directory")}${st("bed","g",V,"Combined vacant beds")}${st("users","",O,"Combined occupied beds")}${st("shield","",rsv,"Reserved beds")}${st("clock","a",up,"Upcoming vacancies (7 days)")}${st("trend","a",T?(V/T*100).toFixed(1)+"%":"—","Combined vacancy rate")}${st("inbox","r",pending,"Awaiting a decision")}</div>
+  <div class="panel"><div class="ds-headrow"><div><h2>Occupancy by dormitory</h2><p class="sub">Each connected dormitory with its bed status. Full room details need the Branch Admin's <b>Room status</b> approval.</p></div>${dsLegend()}</div>
+  <div class="ds-stack">${branches.length?ovAll.map(x=>dsCard(x.b,x.o)).join(""):`<div class="empty" style="padding:24px">No dormitory connected yet. Connect one in the Dormitories tab.</div>`}</div></div>
+  <div class="panel"><h2>Needs attention</h2><p class="sub">Open requests and out-of-date branches.</p><div class="bars">${[...branches.filter(b=>b.dirStatus==="pending"||b.analyticsStatus==="pending"||roomSt(b)==="pending").map(b=>`<div class="bar-row"><b>${esc(b.dormName)}</b> <span class="chip pending">Waiting for approval</span></div>`),...stale.map(b=>`<div class="bar-row"><b>${esc(b.dormName)}</b> <span class="chip pending">No sync since ${ago(live(b).updatedAt)}</span></div>`)].join("")||`<div class="empty" style="padding:24px">Nothing needs your attention.</div>`}</div></div>`;
+  {const n=$("tab-overview").querySelector(".ds-stack");if(n)n.scrollTop=keep}
+  document.documentElement.style.setProperty("--sa-bar-h",(document.querySelector(".bar")||{offsetHeight:70}).offsetHeight+"px");
+  loadPhotos();
+
+  renderInbox();$("tab-inbox").insertAdjacentHTML("afterbegin",chgHtml());renderAccounts();renderServer();
+  if(tab==="trading")trEnter();
+  renderSecurity();
+}
+$("nav").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){if(tab==="inbox")localStorage.setItem("inboxSeen",String(Date.now()));tab=b.dataset.tab;render();scrollTo({top:0})}});
+
+/* ---------- room status copies (third permission) + dormitory pictures ---------- */
+let roomCopies={},rmUn={},photos={};
+function watchRooms(){
+  const want=branches.filter(b=>roomSt(b)==="approved").map(b=>b.id);
+  Object.keys(rmUn).forEach(id=>{if(!want.includes(id)){rmUn[id]();delete rmUn[id];delete roomCopies[id]}});
+  want.forEach(id=>{if(rmUn[id])return;
+    rmUn[id]=onSnapshot(collection(db,"branches",id,"rooms"),sn=>{const list=[];let layout=null;
+      sn.docs.forEach(d=>{let r={};try{r=JSON.parse(d.data().room||"{}")}catch(e){}if(d.id==="__layout")layout=r;else list.push({id:d.id,...r})});
+      roomCopies[id]={rooms:list,layout};render()},()=>{roomCopies[id]={rooms:[],layout:null,denied:true};render()})});
+}
+async function loadPhotos(){
+  for(const b of branches){
+    if(!b.photoVersion||(photos[b.id]&&photos[b.id].v===b.photoVersion))continue;
+    photos[b.id]={v:b.photoVersion,url:""};
+    try{const res=await fetch((window.VT_API_BASE||"")+"/api/branch-photo/"+encodeURIComponent(b.id),{headers:{Authorization:"Bearer "+await VecancyAuth.token()}});
+      if(res.ok){photos[b.id].url=URL.createObjectURL(await res.blob());render()}}catch(e){}
+  }
+}
+const SEG=[["occupied","Occupied","#3B82F6"],["vacant","Vacant","#059669"],["reserved","Reserved","#7C3AED"],["temporary","Temporary","#B66A2C"],["overdue","Overdue","#DC4C4C"]];
+const dsLegend=()=>`<div class="ds-legend">${SEG.map(([,t,c])=>`<span><i style="background:${c}"></i>${t}</span>`).join("")}<span><i class="ds-up-dot"></i>Upcoming vacancy</span></div>`;
+/* One summary per dormitory. With Room status approved every number comes from the shared room copy using the same
+   rules as the Branch Admin (vacancy-core.js). Otherwise only the directory counts are known. */
+function dormSummary(b){
+  const rc=roomCopies[b.id];
+  if(rc&&rc.rooms.length){
+    const now=Date.now(),o={full:true,total:0,occupied:0,vacant:0,reserved:0,temporary:0,overdue:0,upcoming:0,vacantRooms:0,freeRooms:0,rooms:rc.rooms.length,
+      g:{Male:0,Female:0,Mixed:0},d:{Students:0,Reviewees:0,Mixed:0},m:{Bedspace:0,"Whole Room":0},upRooms:[]};
+    rc.rooms.forEach(r=>{const st=VTCore.bedStates(r,now),c=VTCore.summarize(st);
+      o.total+=c.total;o.vacant+=c.vacant;o.reserved+=c.reserved;o.overdue+=c.overdue;o.temporary+=c.temporary;o.upcoming+=c.upcoming;
+      o.occupied+=c.occupied-c.overdue-c.temporary;
+      if(c.total&&c.vacant===c.total)o.vacantRooms++;
+      if(c.vacant>0)o.freeRooms++;
+      o.g[r.gender in o.g?r.gender:"Mixed"]+=c.vacant;o.d[r.demographic in o.d?r.demographic:"Mixed"]+=c.vacant;o.m[r.tenancyMode==="Whole Room"?"Whole Room":"Bedspace"]+=c.vacant;
+      if(c.upcoming)o.upRooms.push({r,beds:st.map((x,i)=>({...x,tenant:(r.bedInfo[i]||{}).tenant||""})).filter(x=>x.upcoming)})});
+    return o;
+  }
+  const s=live(b);if(!s)return null;
+  return {full:false,total:s.total||0,vacant:s.vacant||0,reserved:s.reserved||0,occupied:s.occupied||0,temporary:0,overdue:0,upcoming:0,
+    g:{Male:s.maleVacant||0,Female:s.femaleVacant||0,Mixed:s.mixedVacant||0},d:{Students:s.studentVacant||0,Reviewees:s.revieweeVacant||0,Mixed:s.mixedGroupVacant||0}};
+}
+function dsCard(b,o){
+  const ph=photos[b.id]&&photos[b.id].url,ok=roomSt(b)==="approved";
+  const pic=`<div class="ds-pic">${ph?`<img src="${ph}" alt="${esc(b.dormName)}">`:`<span>${icon("building")}<small>No picture yet</small></span>`}</div>`;
+  const head=`<div class="ds-top"><div><h3>${esc(b.dormName)}</h3><div class="loc">${icon("pin")}${esc(b.location||"Location not provided")}</div></div><div class="chips">${chips3(b)}</div></div>`;
+  if(!o)return `<article class="ds-card">${pic}<div class="ds-body">${head}<p class="det" style="margin:12px 0">${b.dirStatus==="approved"||ok?"Approved. Waiting for the first sync from the branch.":"No data yet: waiting for the Branch Admin to approve Directory or Room status."}</p></div></article>`;
+  const T=o.total||0,w=k=>T?(o[k]/T*100):0,f1=n=>(Math.round(n*10)/10)+"%";
+  const bar=`<div class="ds-bar" role="img" aria-label="Bed status">${SEG.map(([k,t,c])=>o[k]?`<i style="width:${w(k)}%;background:${c}" title="${t}: ${o[k]} (${f1(w(k))})"></i>`:"").join("")}</div>`;
+  const occ=T?(o.occupied+o.temporary+o.overdue)/T*100:0;
+  const nums=`<div class="ds-nums">${SEG.map(([k,t,c])=>`<span><i style="background:${c}"></i>${t} <b>${o[k]}</b> <small>${f1(w(k))}</small></span>`).join("")}</div>
+    <div class="ds-occ">Occupied <b>${f1(occ)}</b> · ${o.occupied+o.temporary+o.overdue} of ${T} beds</div>`;
+  const kv=(t,v,cls)=>`<div class="${cls||""}"><small>${t}</small><b>${v}</b></div>`;
+  // A-0014: room counts in plain words, each with a small bar ("9 of 18 rooms")
+  const roomKv=(t,n,hint,c)=>`<div class="ds-rooms" title="${hint}"><small>${t}</small><b>${n} <em>of ${o.rooms} rooms</em></b><span class="ds-meter"><i style="width:${o.rooms?n/o.rooms*100:0}%;background:${c}"></i></span></div>`;
+  const sumHtml=`<div class="ds-sum">${o.full?roomKv("Rooms with a free bed",o.freeRooms,"Rooms where at least one bed is vacant","var(--green)")+roomKv("Completely empty rooms",o.vacantRooms,"Rooms where every bed is vacant","var(--acc)"):""}${kv("Vacant bedspaces",o.vacant)}
+    ${kv("Vacant · male",o.g.Male)}${kv("Vacant · female",o.g.Female)}${kv("Vacant · mixed gender",o.g.Mixed)}
+    ${kv("Vacant · students",o.d.Students)}${kv("Vacant · reviewees",o.d.Reviewees)}${kv("Vacant · mixed group",o.d.Mixed)}
+    ${o.full?kv("Vacant · bedspace rooms",o.m.Bedspace)+kv("Vacant · whole-room rentals",o.m["Whole Room"]):""}
+    ${kv("Reserved",o.reserved)}${o.full?kv("Overdue",o.overdue,o.overdue?"warn":""):""}</div>`;
+  const acts=`<div class="ds-acts">${o.full?`<button class="btn sm ds-up${o.upcoming?" on":""}" data-up="${esc(b.id)}" type="button">${icon("clock")} Upcoming vacancies <b>${o.upcoming}</b></button>`:`<span class="det">Upcoming vacancies, temporary and overdue need <b>Room status</b> approval.</span>`}
+    ${ok?`<a class="btn sm pri" href="viewer.html?branch=${encodeURIComponent(b.id)}" target="_blank" rel="noopener">${icon("building")} View dorm</a>`:`<span class="det">View dorm: ${esc(label[roomSt(b)]||roomSt(b))}</span>`}</div>`;
+  return `<article class="ds-card">${pic}<div class="ds-body">${head}${bar}${nums}${sumHtml}${acts}</div></article>`;
+}
+function upcomingModal(bid){
+  const b=branches.find(x=>x.id===bid),o=b&&dormSummary(b);if(!o||!o.full)return;
+  const fmt=v=>VTCore.fmtDate(v)||"—",m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");
+  const list=o.upRooms.slice().sort((p,q)=>Math.min(...p.beds.map(x=>+VTCore.parseDate(x.end,true)))-Math.min(...q.beds.map(x=>+VTCore.parseDate(x.end,true))));
+  m.innerHTML=`<div class="up-modal"><div class="up-head"><div><h3>Upcoming vacancies · ${esc(b.dormName)}</h3><p>${o.upcoming} bed${o.upcoming===1?"":"s"} will become vacant within ${VTCore.UPCOMING_DAYS} days (still occupied until check-out).</p></div><button class="btn sm" data-x type="button" aria-label="Close">✕</button></div>
+  <div class="up-list">${list.length?list.map(({r,beds})=>`<section class="up-room"><div class="up-rh"><b>Room ${esc(r.room)}</b>${r.floor?`<span class="chip">${esc(r.floor)}</span>`:""}</div>
+    <div class="up-info"><span>${r.ac?"❄ Aircon":"Non-aircon"}</span><span>${esc(r.demographic==="Students"?"Students":r.demographic==="Reviewees"?"Reviewees":"Mixed group")}</span><span>${esc(r.gender||"Mixed")}${r.gender==="Male"||r.gender==="Female"?" only":" gender"}</span><span>Capacity ${r.capacity||(r.bedInfo||[]).length}</span><span>${esc(r.tenancyMode==="Whole Room"?"Whole room":"Bedspace")}</span></div>
+    <table><thead><tr><th>Bed</th><th>Tenant</th><th>Check-out (becomes vacant)</th></tr></thead><tbody>${beds.map(x=>`<tr><td>${esc(x.slot)}</td><td>${esc(x.tenant||"—")}</td><td>${esc(fmt(x.end))}</td></tr>`).join("")}</tbody></table></section>`).join(""):`<div class="empty">No upcoming vacancies in the next ${VTCore.UPCOMING_DAYS} days.</div>`}</div></div>`;
+  const close=()=>m.remove();m.onclick=e=>{if(e.target===m||e.target.closest("[data-x]"))close()};
+  document.addEventListener("keydown",function k(e){if(e.key==="Escape"){close();document.removeEventListener("keydown",k)}});
+  document.body.appendChild(m);m.querySelector("[data-x]").focus();
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-up]");if(b)upcomingModal(b.dataset.up)});
+
+/* ---------- central server access, viewers, blocks, consent ---------- */
+let central=null,cViewers=[],cBlocked=[],chg={},cUn=[],chUn=[];
+const sub={srv:"details",sec:"conn"};
+const pendingChanges=()=>Object.entries(chg).flatMap(([bid,l])=>l.filter(x=>x.status==="pending").map(x=>({...x,bid})));
+function watchCentral(){
+  cUn.forEach(f=>f());cUn=[];cViewers=[];cBlocked=[];if(!central)return;const c=central.code;
+  cUn.push(onSnapshot(collection(db,"centralAccess",c,"viewers"),sn=>{cViewers=sn.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{}));
+  cUn.push(onSnapshot(collection(db,"centralAccess",c,"blocked"),sn=>{cBlocked=sn.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{}));
+}
+function watchChanges(){
+  const ids=branches.map(b=>b.id).join(",");if(ids===watchChanges.k)return;watchChanges.k=ids;
+  chUn.forEach(f=>f());chUn=[];chg={};
+  branches.forEach(b=>chUn.push(onSnapshot(collection(db,"branches",b.id,"changes"),sn=>{chg[b.id]=sn.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{})));
+}
+const subTabs=(g,items)=>`<div class="tools" style="margin-bottom:14px" role="tablist">${items.map(([k,t,n])=>`<button class="chip-f ${sub[g]===k?"on":""}" data-sub="${g}:${k}" role="tab">${t}${n!=null?" ("+n+")":""}</button>`).join("")}</div>`;
+const empty=(i,t)=>`<div class="empty" style="margin-top:14px">${icon(i)}<div>${t}</div></div>`;
+const KINDS={password:"change the viewer password",remove:"remove the dorm server",pause:"pause or turn back on viewer access"};
+function chgHtml(){
+  const l=pendingChanges();
+  return `<div class="panel" style="margin-bottom:16px"><h2>Permission requests${l.length?" ("+l.length+")":""}</h2><p class="sub">A Branch Admin needs your approval to pause viewer access, change the viewer password or remove its dorm server. Their reason is shown with each request; once you accept, the change happens on their side by itself.</p>${l.length?l.map(x=>{const b=branches.find(y=>y.id===x.bid)||{};return `<div class="msgrow new"><span class="ico">${icon("shield")}</span><div><b>${esc(b.dormName||x.dormName||"Branch")}</b><small>Wants to ${esc(KINDS[x.kind]||x.kind)} · ${when(x.createdAt)}</small>${x.reason?`<p class="chg-reason"><b>Reason:</b> ${esc(x.reason)}</p>`:""}</div><span style="display:flex;gap:6px"><button class="btn sm pri" data-chg="approved" data-bid="${esc(x.bid)}" data-id="${esc(x.id)}">Accept</button><button class="btn sm danger" data-chg="rejected" data-bid="${esc(x.bid)}" data-id="${esc(x.id)}">Reject</button></span></div>`}).join(""):empty("shield","No requests waiting.")}</div>`;
+}
+const vTable=(list,act,txt)=>`<div style="overflow-x:auto;margin-top:12px"><table><thead><tr><th>Name</th><th>Email</th><th>${act==="blk"?"Joined":"Blocked"}</th><th></th></tr></thead><tbody>${list.map(v=>`<tr><td>${esc(v.name||"—")}</td><td>${esc(v.email||"—")}</td><td>${when(act==="blk"?v.joinedAt:v.blockedAt)}</td><td style="text-align:right;white-space:nowrap">${act==="blk"?`<button class="btn sm" data-rmv="${esc(v.id)}">Remove</button> `:""}<button class="btn sm ${act==="blk"?"danger":""}" data-${act}="${esc(v.id)}">${txt}</button></td></tr>`).join("")}</tbody></table></div>`;
+function accessHtml(){
+  if(!central)return `<div class="panel"><h2>Super Admin server for viewers</h2><p class="sub">You can create <b>one</b> server. After that you can only pause it, turn it on, change its password or delete it. Choose a server code and password. Viewers open the viewer page, sign in, enter the code and password, and see the dormitory directory. Same flow as a dormitory server.</p>
+  <div class="field"><label for="cName">Server name</label><input id="cName" placeholder="e.g. Cebu Dorm Network"></div>
+  <div class="field"><label for="cCode">Server code (4–30 letters, numbers, dashes)</label><input id="cCode" autocomplete="off"></div>
+  <div class="field"><label for="cPw">Password (8+ characters)</label><input id="cPw" type="password" autocomplete="new-password"></div>
+  <div class="field"><label for="cPw2">Repeat password</label><input id="cPw2" type="password" autocomplete="new-password"></div>
+  <button class="btn pri" id="cCreate" type="button" style="margin-top:14px">Create server</button><div class="msg" id="cMsg"></div></div>`;
+  const kv=(k,v)=>`<div><small>${k}</small><b>${v}</b></div>`;
+  return `<div class="panel"><h2>Super Admin server for viewers</h2><div class="kv">${kv("Server code",esc(central.code))}${kv("Name",esc(central.name||"—"))}${kv("Status",central.enabled?'<span class="chip approved">On</span>':'<span class="chip pending">Paused</span>')}${kv("Viewer link",esc(new URL("viewer.html",location.href).href))}</div>
+  <p class="sub" style="margin-top:12px">Give viewers the link, the code and the password. Passwords are stored only as a fingerprint, so if you forget it, set a new one.</p>
+  <div class="tools"><button class="btn sm" id="cToggle" type="button">${central.enabled?"Pause access":"Turn access on"}</button><button class="btn sm danger" id="cDelete" type="button">Delete server</button></div>
+  <div class="field" style="margin-top:14px"><label for="cNewPw">New password (8+ characters) — everyone is signed out of the server</label><input id="cNewPw" type="password" autocomplete="new-password"></div>
+  <button class="btn sm pri" id="cChangePw" type="button">Change password</button><div class="msg" id="cMsg"></div></div>`;
+}
+function renderServer(){
+  const host=$("tab-server"),ae=document.activeElement;
+  if(ae&&host.contains(ae)&&/INPUT|TEXTAREA/.test(ae.tagName))return;   // don't wipe what is being typed
+  const t=subTabs("srv",[["details","Server details"],["access","Viewer access"],["viewers","Viewers",cViewers.length],["blocked","Blocked list",cBlocked.length]]);
+  let b;
+  if(sub.srv==="details")b=serverDetailsHtml();
+  else if(sub.srv==="access")b=accessHtml();
+  else if(sub.srv==="viewers")b=`<div class="panel"><h2>Viewers on your server</h2><p class="sub">People who joined with your server code and password. <b>Remove</b> takes them off now (they can join again with the code and password). <b>Block</b> removes them and stops them joining again.</p>${!central?empty("users","Create a server first (Viewer access tab)."):cViewers.length?vTable(cViewers,"blk","Block"):empty("users","Nobody has joined yet.")}</div>`;
+  else b=`<div class="panel"><h2>Blocked list</h2><p class="sub">Unblock someone so they can join again with the code and password.</p>${cBlocked.length?vTable(cBlocked,"unblk","Unblock"):empty("shield","Nobody is blocked.")}</div>`;
+  host.innerHTML=t+b;
+}
+function renderSecurity(){
+  const cls=a=>/REVOK|REJECT|DISCONN|BLOCK/.test(a)&&!/UNBLOCK/.test(a)?"revoked":/APPROV|UNBLOCK/.test(a)?"approved":"pending";
+  const isV=a=>/^(VIEWER_|CENTRAL_)/.test(a.action);
+  const rows=l=>l.length?`<div style="overflow-x:auto;margin-top:12px"><table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead><tbody>${l.map(a=>`<tr><td>${when(a.at)}</td><td>${esc(a.actorEmail)}</td><td><span class="chip ${cls(a.action)}">${esc(a.action.replace(/_/g," "))}</span></td><td>${esc((a.branch?a.branch+" · ":"")+(a.detail||""))}</td></tr>`).join("")}</tbody></table></div>`:empty("shield","No activity yet.");
+  let b;
+  if(sub.sec==="conn")b=`<div class="panel"><h2>Connector accounts</h2><p class="sub">Branch Admin accounts connected to you.</p><div style="overflow-x:auto;margin-top:12px"><table><thead><tr><th>Dormitory</th><th>Account ID</th><th>Permissions</th></tr></thead><tbody>${branches.map(x=>`<tr><td>${esc(x.dormName)}</td><td><code>${esc(x.id.slice(0,10))}…</code></td><td>${chips3(x)}</td></tr>`).join("")||`<tr><td colspan="3">No connected branches.</td></tr>`}</tbody></table></div></div>
+    <div class="panel"><h2>Connector activity</h2><p class="sub">Connections, decisions, disconnections and change requests. Entries can't be edited or deleted.</p>${rows(audit.filter(a=>!isV(a)))}</div>`;
+  else b=`<div class="panel"><h2>Viewer accounts</h2><p class="sub">People who joined your server with its code and password.</p>${cViewers.length?vTable(cViewers,"blk","Block"):empty("users","No viewers have joined yet.")}</div>
+    <div class="panel"><h2>Viewer activity</h2><p class="sub">Removals, blocks and unblocks of viewers.</p>${rows(audit.filter(isV))}</div>`;
+  $("tab-security").innerHTML=subTabs("sec",[["conn","Connectors",branches.length],["viewers","Viewers",cViewers.length]])+b;
+}
+document.addEventListener("click",async e=>{
+  const t=e.target.closest("button");if(!t||!user)return;
+  try{
+    if(t.dataset.sub){const[g,k]=t.dataset.sub.split(":");sub[g]=k;return render()}
+    if(t.dataset.chg){await updateDoc(doc(db,"branches",t.dataset.bid,"changes",t.dataset.id),{status:t.dataset.chg,decidedAt:serverTimestamp()});
+      const b=branches.find(y=>y.id===t.dataset.bid)||{};log("CHANGE_"+(t.dataset.chg==="approved"?"APPROVED":"REJECTED"),b.dormName,"Branch change request");toast(t.dataset.chg==="approved"?"Approved. The change happens on the branch by itself.":"Rejected.");return}
+    if(t.id==="cCreate"){
+      const code=normalizeDormCode($("cCode").value),pw=$("cPw").value,msg=$("cMsg");
+      if(!isValidDormCode(code))return say(msg,"Code must be 4–30 characters: letters, numbers and dashes.",1);
+      if(pw.length<8)return say(msg,"Use a password with at least 8 characters.",1);
+      if(pw!==$("cPw2").value)return say(msg,"The two passwords do not match.",1);
+      if(central)return say(msg,"You already have a server. Each Super Admin can have only one.",1);
+      const proof=await viewerProof(code,pw),bt=writeBatch(db);   // all-or-nothing
+      bt.set(doc(db,"centralSecrets",code),{ownerUid:user.uid,passwordHash:proof});
+      bt.set(doc(db,"centralAccess",code),{ownerUid:user.uid,name:$("cName").value.trim()||"Super Admin server",enabled:true,updatedAt:serverTimestamp()});
+      bt.set(doc(db,"centralOwner",user.uid),{code});
+      await bt.commit();
+      log("CENTRAL_SERVER_CREATED","",code);toast("Server created.");return}
+    if(t.id==="cToggle"){await updateDoc(doc(db,"centralAccess",central.code),{ownerUid:user.uid,name:central.name||"",enabled:!central.enabled,updatedAt:serverTimestamp()});return}
+    if(t.id==="cChangePw"){const pw=$("cNewPw").value;if(pw.length<8)return say($("cMsg"),"Use a password with at least 8 characters.",1);
+      if(!await ask("Change the server password?","Everyone who joined is removed and must enter the new password.","Change"))return;
+      await updateDoc(doc(db,"centralSecrets",central.code),{passwordHash:await viewerProof(central.code,pw)});
+      for(const v of cViewers)await deleteDoc(doc(db,"centralAccess",central.code,"viewers",v.id));
+      log("CENTRAL_PASSWORD_CHANGED","",central.code);$("cNewPw").value="";toast("Password changed.");return}
+    if(t.id==="cDelete"){if(!await ask("Delete this server?","All viewers lose access. Dormitories are not affected.","Delete",true))return;
+      for(const v of cViewers)await deleteDoc(doc(db,"centralAccess",central.code,"viewers",v.id));
+      for(const v of cBlocked)await deleteDoc(doc(db,"centralAccess",central.code,"blocked",v.id));
+      {const bt=writeBatch(db);bt.delete(doc(db,"centralSecrets",central.code));bt.delete(doc(db,"centralAccess",central.code));bt.delete(doc(db,"centralOwner",user.uid));await bt.commit()}log("CENTRAL_SERVER_DELETED","",central.code);return}
+    if(t.dataset.blk){const v=cViewers.find(x=>x.id===t.dataset.blk);if(!v||!await ask("Block "+(v.name||v.email||"this viewer")+"?","They lose access right away and cannot rejoin until you unblock them.","Block",true))return;
+      await setDoc(doc(db,"centralAccess",central.code,"blocked",v.id),{name:v.name||"",email:v.email||"",blockedAt:serverTimestamp()});
+      await deleteDoc(doc(db,"centralAccess",central.code,"viewers",v.id));log("VIEWER_BLOCKED","",v.email||v.name||v.id);return}
+    if(t.dataset.rmv){const v=cViewers.find(x=>x.id===t.dataset.rmv);if(!v||!await ask("Remove "+(v.name||v.email||"this viewer")+"?","They lose access now. They are not blocked, so they can join again with the server code and password.","Remove",true))return;
+      await deleteDoc(doc(db,"centralAccess",central.code,"viewers",v.id));log("VIEWER_REMOVED","",v.email||v.name||v.id);toast("Viewer removed.");return}
+    if(t.dataset.unblk){const v=cBlocked.find(x=>x.id===t.dataset.unblk);await deleteDoc(doc(db,"centralAccess",central.code,"blocked",t.dataset.unblk));log("VIEWER_UNBLOCKED","",(v&&(v.email||v.name))||t.dataset.unblk);return}
+  }catch(err){toast(err.code==="permission-denied"?"Permission denied. This account is not allowed to do that.":"Failed: "+(err.code||err.message),1)}
+});
+
+/* ---------- inbox (decisions and alerts from branches) ---------- */
+const seenAt=()=>Number(localStorage.getItem("inboxSeen")||0);
+function inboxItems(){
+  return audit.filter(a=>a.actorUid!==(user&&user.uid)&&/^(PERMISSION_|BRANCH_)/.test(a.action));
+}
+function renderInbox(){
+  const items=inboxItems(),seen=seenAt();
+  const stale=branches.filter(b=>live(b)&&isStale(live(b)));
+  const title=a=>{const w=/Directory/i.test(a.detail)?"Directory":/Room/i.test(a.detail)?"Room status":"Analytics";
+    if(a.action==="PERMISSION_APPROVED")return w+" permission approved";
+    if(a.action==="PERMISSION_REJECTED")return w+" permission rejected";
+    if(a.action==="PERMISSION_REVOKED")return "Access revoked: "+w.toLowerCase();
+    if(a.action==="BRANCH_DISCONNECTED")return "Branch disconnected itself";return a.action};
+  const sub=a=>({PERMISSION_APPROVED:"Approval received",PERMISSION_REJECTED:"Rejected by Branch Admin",PERMISSION_REVOKED:"Branch Admin action",BRANCH_DISCONNECTED:"Branch Admin action"}[a.action]||"");
+  const row=(i,t,s,time,isNew)=>`<div class="msgrow${isNew?" new":""}"><span class="ico">${icon(i)}</span><div><b>${esc(t)}</b><small>${esc(s)}</small></div><time>${time}</time></div>`;
+  const n=items.filter(m=>m.at&&m.at.toMillis()>seen).length;
+  $("tab-inbox").innerHTML=`<div class="panel"><h2>Central inbox</h2><p class="sub">${n?n+" unread. ":""}Decisions and alerts from Branch Admins. Gmail notifications can be connected later; this inbox works without it.</p>
+  <div style="margin-top:10px">${[...stale.map(b=>row("clock","Sync alert: "+b.dormName,"No update from this branch for over 30 minutes",ago(live(b).updatedAt),false)),...items.map(a=>row(/REJECT|REVOK|DISCONN/.test(a.action)?"shield":"inbox",title(a),a.branch+" • "+sub(a),when(a.at),a.at&&a.at.toMillis()>seen))].join("")||`<div class="empty">${icon("inbox")}<div><b>Nothing here yet</b></div>Branch decisions will appear as soon as they are made.</div>`}</div></div>`;
+}
+
+/* ---------- accounts ---------- */
+function renderAccounts(){
+  $("tab-accounts").innerHTML=`<div class="panel"><h2>Your Super Admin account</h2><p class="sub">Anyone can create a Super Admin account. You only see and manage the dormitories you connected yourself.</p>
+  <div class="kv"><div><small>Email</small><b>${esc(user.email||"—")}</b></div><div><small>User ID</small><b>${esc(user.uid)}</b></div><div><small>Dormitories you manage</small><b>${branches.length}</b></div></div></div>
+  <div class="panel"><h2>Branch Admin accounts</h2><p class="sub">Each connected dormitory is one Branch Admin account. Disconnecting ends the connection and stops all data sharing from that branch.</p>
+  <div style="overflow-x:auto;margin-top:12px"><table><thead><tr><th>Dormitory</th><th>Account ID</th><th>Permissions</th><th></th></tr></thead><tbody>${branches.map(b=>`<tr><td>${esc(b.dormName)}</td><td><code>${esc(b.id.slice(0,10))}…</code></td><td>${chips3(b)}</td><td style="text-align:right"><button class="btn sm danger" data-off="${esc(b.id)}">Disconnect</button></td></tr>`).join("")||`<tr><td colspan="4">No connected branches.</td></tr>`}</tbody></table></div>
+  <p class="det" style="margin-top:12px">Blocking or kicking a live login session needs a server component, which this project doesn't have yet. Disconnecting a branch is the strongest control available here.</p></div>`;
+}
+
+/* ---------- server details (read-only) ---------- */
+function serverDetailsHtml(){
+  const key=cfg.apiKey||"",kv=(k,v)=>`<div><small>${k}</small><b>${v}</b></div>`;
+  return `<div class="panel"><h2>Central server</h2><p class="sub">Visible to Super Admins only.</p><div class="kv">${kv("Server ID","CENTRAL-"+esc(cfg.projectId))}${kv("Database","Firestore (Super Admin collections)")}${kv("Status",'<span class="chip approved">Connected</span>')}${kv("Access","Super Admin only")}${kv("Credentials","Protected · key ending "+esc(key.slice(-4)))}${kv("Auth domain",esc(cfg.authDomain||"—"))}</div></div>
+  <div class="panel"><h2>Connected branch servers</h2><p class="sub">Read-only. You can see a branch's connection state, but only its Branch Admin can change it.</p>
+  <div style="overflow-x:auto;margin-top:12px"><table><thead><tr><th>Dormitory</th><th>Branch ID</th><th>Connection</th><th>Last sync</th><th>Permissions</th></tr></thead><tbody>${branches.map(b=>{const s=live(b),c=!s?`<span class="chip pending">${b.dirStatus==="approved"?"Awaiting first sync":"Not publishing"}</span>`:isStale(s)?'<span class="chip pending">Outdated</span>':'<span class="chip approved">Online</span>';return `<tr><td>${esc(b.dormName)}</td><td><code>${esc(b.id.slice(0,10))}…</code></td><td>${c}</td><td>${s?ago(s.updatedAt):"—"}</td><td>${chips3(b)}</td></tr>`}).join("")||`<tr><td colspan="5">No connected branches.</td></tr>`}</tbody></table></div></div>`;
+}
+
+/* ---------- trading analytics ---------- */
+const TFS=["1H","1D","1W","1M","3M","6M","1Y","ALL","Custom"],DAY=864e5;
+const SPAN={"1H":36e5,"1D":DAY,"1W":7*DAY,"1M":30*DAY,"3M":91*DAY,"6M":182*DAY,"1Y":365*DAY};
+const METRICS={vacant:["Vacant beds",s=>s.vacant,0],occupied:["Occupied beds",s=>s.occupied,0],vacRate:["Vacancy rate %",s=>s.total?s.vacant/s.total*100:null,1],occRate:["Occupancy rate %",s=>s.total?s.occupied/s.total*100:null,1],male:["Male vacancy",s=>s.maleVacant,0],female:["Female vacancy",s=>s.femaleVacant,0],student:["Student vacancy",s=>s.studentVacant,0],reviewee:["Reviewee vacancy",s=>s.revieweeVacant,0],mixed:["Mixed-gender vacancy",s=>s.mixedVacant||0,0],mixedgroup:["Mixed student/reviewee vacancy",s=>s.mixedGroupVacant||0,0],aircon:["Aircon vacancy",s=>s.acVacant,0],upcoming:["Upcoming vacancies (next 7 days)",s=>evIn(s.checkouts,"out",s.t,s.t+7*DAY),0],checkins:["Scheduled check-ins (next 7 days)",s=>evIn(s.checkins,"in",s.t,s.t+7*DAY),0]};
+const COLORS=["#4f46e5","#e5484d","#12a37a","#e5a13a","#0ea5e9","#a855f7","#ec4899","#64748b"];
+const tr={tf:"1W",from:null,to:null,metric:"vacant",sel:new Set(),combined:null,raw:{},exh:{},chart:null,key:"",loading:false,interval:"day"};
+/* ---- Risk classification: RED high risk · YELLOW moderate · GREEN safe. Business rules (editable, saved in this browser):
+   high     = vacancy rate >= hiRate %  OR vacancy rate rose by >= hiJump points in the last 7 days
+   moderate = vacancy rate >= modRate % OR rose by >= modJump points in 7 days OR >= modSoon % of beds check out within 7 days
+   safe     = none of the above. Computed from the branch's recorded snapshots; never from the forecast. */
+const RISK_DEFAULT={hiRate:30,hiJump:10,modRate:15,modJump:3,modSoon:10};
+function riskRules(){try{return {...RISK_DEFAULT,...JSON.parse(localStorage.getItem("vtRiskRules")||"{}")}}catch(e){return {...RISK_DEFAULT}}}
+function riskOf(snaps,at){
+  const R=riskRules(),hist=(snaps||[]).filter(x=>x.t<=at);if(!hist.length)return null;
+  const s=hist[hist.length-1];if(!s.total)return null;
+  const rate=s.vacant/s.total*100,wk=hist.filter(x=>x.t<=s.t-7*DAY).slice(-1)[0],change=wk&&wk.total?rate-wk.vacant/wk.total*100:null;
+  const soonN=parseCo(s.checkouts).filter(([t])=>t>s.t&&t<=s.t+7*DAY).reduce((n,[,c])=>n+c,0),soon=soonN/s.total*100;
+  const why=[];let level="safe";
+  // plain-language reasons (feedback A-0014)
+  const empty=Math.round(rate)+"% of beds are empty",pts=v=>Math.abs(v).toFixed(1).replace(/\.0$/,"");
+  if(rate>=R.hiRate){level="high";why.push(empty+" (high when "+R.hiRate+"% or more)")}
+  if(change!=null&&change>=R.hiJump){level="high";why.push("empty beds jumped by "+pts(change)+"% this week")}
+  if(level!=="high"){
+    if(rate>=R.modRate){level="moderate";why.push(empty+" (watch when "+R.modRate+"% or more)")}
+    if(change!=null&&change>=R.modJump){level="moderate";why.push("empty beds went up by "+pts(change)+"% this week")}
+    if(soon>=R.modSoon){level="moderate";why.push(soonN+" tenant"+(soonN===1?"":"s")+" will move out in the next 7 days")}
+  }
+  if(level==="safe"){why.push(empty+" — that's fine");if(change!=null&&change!==0)why.push(change<0?"fewer empty beds than last week ("+pts(change)+"% less)":"slightly more empty beds than last week (+"+pts(change)+"%)")}
+  return {level,rate,change,soonN,why,at:s.t};
+}
+const RISK_LABEL={high:["Risk","#dc2626"],moderate:["Moderate","#d97706"],safe:["Safe","#16a34a"]};
+/* Dormitory cards = the chart's dormitory picker (feedback A-0012/13/15/16):
+   click = show only that card · double-click = add/remove it (choose several) · Select all / Unselect ·
+   Safe / Moderate / Risk buttons show every dormitory at that level. */
+function trRiskRender(){
+  const A=authBr(),at=Math.min(trEnd(),Date.now()),R=riskRules();
+  if(!A.length){$("trRisk").innerHTML=`<div class="empty" style="width:100%">${icon("trend")}<div><b>No dormitory has approved Analytics yet</b></div>Charts appear after a Branch Admin approves "Share vacancy analytics data" and about 15 minutes of data has been recorded.</div>`;$("trKey").innerHTML="";return}
+  const rows=A.map(b=>({b,r:riskOf(tr.raw[b.id],at)}));
+  // combined card: all dormitories together
+  const lat=A.map(b=>(tr.raw[b.id]||[]).filter(x=>x.t<=at).slice(-1)[0]).filter(Boolean),tot=lat.reduce((n,x)=>n+(x.total||0),0),vac=lat.reduce((n,x)=>n+(x.vacant||0),0);
+  const cRate=tot?vac/tot*100:null,cLevel=cRate==null?null:cRate>=R.hiRate?"high":cRate>=R.modRate?"moderate":"safe";
+  const cnt={high:0,moderate:0,safe:0};rows.forEach(x=>{if(x.r)cnt[x.r.level]++});
+  const when=t=>"Updated "+new Date(t).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+  const any=tr.combined||tr.sel.size>0;
+  const card=(id,on,level,title,body)=>`<button type="button" class="risk-chip ${level?"risk-"+level:""}${on?" on":""}" data-rc="${esc(id)}" aria-pressed="${on}"><span class="risk-check" aria-hidden="true">✓</span><span class="risk-dot"></span><span><b>${title}</b><small>${body}</small></span></button>`;
+  $("trRisk").innerHTML=`<div class="risk-head"><b>Dormitories on the chart</b><span class="det">Click a card to show only it · double-click to add or remove more</span>
+      <button class="btn sm" type="button" id="trSelAll">${any?"Unselect all":"Select all"}</button><button class="btn sm" type="button" id="trRules">Thresholds</button></div>
+    <div class="risk-list">${A.length>1?card("__all",tr.combined,cLevel,"All dormitories (combined)"+(cLevel?" — "+RISK_LABEL[cLevel][0]:""),cRate==null?"No recorded data yet":Math.round(cRate)+"% of "+tot+" beds are empty · "+cnt.safe+" safe, "+cnt.moderate+" moderate, "+cnt.high+" at risk"):""}
+    ${rows.map(({b,r})=>r?card(b.id,tr.sel.has(b.id),r.level,esc(b.dormName)+" — "+RISK_LABEL[r.level][0],esc(r.why.join(" · "))+" · "+when(r.at)):card(b.id,tr.sel.has(b.id),"",esc(b.dormName),"No recorded data for this period yet")).join("")}</div>
+    <div class="risk-rules" id="trRulesBox" hidden><span class="det">Risk if vacancy ≥ <input type="number" min="1" max="100" data-rr="hiRate" value="${R.hiRate}">% or rises ≥ <input type="number" min="1" max="100" data-rr="hiJump" value="${R.hiJump}"> pts in 7 days. Moderate if vacancy ≥ <input type="number" min="1" max="100" data-rr="modRate" value="${R.modRate}">%, rises ≥ <input type="number" min="0" max="100" data-rr="modJump" value="${R.modJump}"> pts, or ≥ <input type="number" min="0" max="100" data-rr="modSoon" value="${R.modSoon}">% of beds check out within 7 days.</span><button class="btn sm" type="button" id="trRulesReset">Reset to defaults</button></div>`;
+  const lv=[["safe","Safe"],["moderate","Moderate"],["high","Risk"]];
+  $("trKey").innerHTML=lv.map(([k,t])=>{const ids=rows.filter(x=>x.r&&x.r.level===k).map(x=>x.b.id),on=ids.length&&!tr.combined&&ids.length===tr.sel.size&&ids.every(i=>tr.sel.has(i));
+    return `<button type="button" class="tr-level lv-${k}${on?" on":""}" data-lv="${k}" ${ids.length?"":"disabled"} aria-pressed="${!!on}">${t} <b>${ids.length}</b></button>`}).join("");
+}
+/* "?" help for the analytics panel (feedback A-0018) */
+function trHelpOpen(){
+  const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-labelledby","trHelpT");
+  const sec=(t,b)=>`<section class="hlp-sec"><h4>${t}</h4>${b}</section>`;
+  m.innerHTML=`<div class="up-modal hlp-modal"><div class="up-head"><div><h3 id="trHelpT">How to read Vacancy analytics</h3><p>Everything on this panel, in plain words.</p></div><button class="btn sm" data-x type="button" aria-label="Close">✕</button></div><div class="up-list">
+  ${sec("What it shows","<p>The chart shows how many beds were <b>empty</b> (or occupied — pick it in the top-right menu) in your dormitories over time. Only dormitories whose Branch Admin approved <b>Analytics</b> appear.</p>")}
+  ${sec("Choosing dormitories","<ul><li><b>Click</b> a card to show only that dormitory.</li><li><b>Double-click</b> cards to add or remove more than one.</li><li><b>All dormitories (combined)</b> adds everything up as one line.</li><li><b>Select all / Unselect all</b> switches every card on or off.</li><li><b>Safe / Moderate / Risk</b> buttons show every dormitory at that level.</li></ul>")}
+  ${sec("Safe, Moderate and Risk","<ul><li><span class='hlp-dot' style='background:#16a34a'></span><b>Safe</b>: few empty beds and nothing worrying.</li><li><span class='hlp-dot' style='background:#d97706'></span><b>Moderate</b>: worth watching — more empty beds than usual, empty beds going up, or many tenants moving out within 7 days.</li><li><span class='hlp-dot' style='background:#dc2626'></span><b>Risk</b>: a lot of empty beds, or a big jump this week.</li></ul><p>You decide the numbers with <b>Thresholds</b>.</p>")}
+  ${sec("The colour strip on the left","<p>Green (top) = safe, yellow = normal, red (bottom) = risk. For empty beds the chart is drawn <b>upside down</b>: the more empty beds, the lower the line, so trouble always sits at the bottom.</p>")}
+  ${sec("Lines and candles","<ul><li>Left of the dotted <b>NOW</b> line = what really happened (recorded history).</li><li>Right of NOW = the <b>forecast</b> (purple): dashed = check-outs and reservations already scheduled; dotted = a trend guess.</li><li>A step <span style='color:#16a34a'>green</span> = more empty beds, <span style='color:#dc2626'>red</span> = fewer, grey = no change.</li><li><b>Candles</b> show the opening, highest, lowest and closing value of each hour/day/week.</li></ul>")}
+  ${sec("Moving around","<ul><li><b>1H … ALL</b> pick how far back to look; <b>Custom</b> picks your own dates.</li><li>Drag the chart or use the <b>Older / Newer</b> slider. <b>+ / −</b> zoom; <b>Latest</b> jumps back to now.</li><li><b>Go to date</b> / <b>Today</b> centre the chart on a day.</li></ul>")}
+  ${sec("Right now",`<p>${esc($("trAxisNote").textContent||"")}</p><p>${esc($("trNote").textContent||"")}</p>`)}
+  </div></div>`;
+  const close=()=>m.remove();m.onclick=e=>{if(e.target===m||e.target.closest("[data-x]"))close()};
+  document.addEventListener("keydown",function k(e){if(e.key==="Escape"){close();document.removeEventListener("keydown",k)}});
+  document.body.appendChild(m);m.querySelector("[data-x]").focus();
+}
+document.addEventListener("click",e=>{if(e.target.closest("#trHelp"))trHelpOpen()});
+let trClickTimer=null;
+function trPick(id,multi){
+  if(multi){ if(id==="__all")tr.combined=!tr.combined; else tr.sel.has(id)?tr.sel.delete(id):tr.sel.add(id); }
+  else if(id==="__all"){tr.combined=true;tr.sel=new Set()}
+  else{tr.combined=false;tr.sel=new Set([id])}
+  trRiskRender();trBuild(false);
+}
+document.addEventListener("click",e=>{
+  const c=e.target.closest("[data-rc]");
+  if(c){clearTimeout(trClickTimer);const id=c.dataset.rc;if(e.detail>=2)return;trClickTimer=setTimeout(()=>trPick(id,false),240);return}
+  if(e.target.closest("#trSelAll")){const A=authBr();if(tr.combined||tr.sel.size){tr.combined=false;tr.sel=new Set()}else{tr.sel=new Set(A.map(b=>b.id));tr.combined=A.length>1}trRiskRender();trBuild(false);return}
+  const l=e.target.closest("[data-lv]");
+  if(l){const at=Math.min(trEnd(),Date.now()),ids=authBr().filter(b=>{const r=riskOf(tr.raw[b.id],at);return r&&r.level===l.dataset.lv}).map(b=>b.id);
+    const on=l.classList.contains("on");tr.combined=false;tr.sel=on?new Set():new Set(ids);trRiskRender();trBuild(false)}
+});
+document.addEventListener("dblclick",e=>{const c=e.target.closest("[data-rc]");if(!c)return;clearTimeout(trClickTimer);trPick(c.dataset.rc,true)});
+
+document.addEventListener("click",e=>{
+  if(e.target.closest("#trRules")){const b=$("trRulesBox");b.hidden=!b.hidden}
+  if(e.target.closest("#trRulesReset")){localStorage.removeItem("vtRiskRules");trRiskRender();trBuild(false);$("trRulesBox").hidden=false}
+});
+document.addEventListener("change",e=>{const k=e.target.dataset&&e.target.dataset.rr;if(!k)return;const v=Number(e.target.value);if(!Number.isFinite(v)||v<0||v>100){toast("Enter a number from 0 to 100.",1);return}
+  const R=riskRules();R[k]=v;if(R.modRate>R.hiRate){toast("The moderate vacancy rate must not be above the high-risk rate.",1);return}
+  localStorage.setItem("vtRiskRules",JSON.stringify(R));trRiskRender();trBuild(false);$("trRulesBox").hidden=false});
+let trTimer=null;
+const authBr=()=>branches.filter(b=>b.analyticsStatus==="approved");
+const trStart=()=>tr.tf==="Custom"?tr.from:tr.tf==="ALL"?0:Date.now()-SPAN[tr.tf];
+const trEnd=()=>tr.tf==="Custom"&&tr.to?tr.to:Date.now();
+
+function trEnter(){
+  const A=authBr(),key=A.map(b=>b.id).join(",");
+  if(!tr.chart){
+    tr.chart=CChart.create($("trCanvas"),{needOlder:trOlder,onWindow:(a,b)=>{trSync(a,b);trAutoUnit(a,b)}});
+    $("trMetric").innerHTML=Object.entries(METRICS).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join("");
+    $("trMetric").onchange=e=>{tr.metric=e.target.value;trBuild(false)};
+    $("trTf").onclick=e=>{const b=e.target.closest("[data-tf]");if(!b)return;tr.tf=b.dataset.tf;$("trCustom").hidden=tr.tf!=="Custom";
+      tr.manualUnit=false;tr.interval={"1H":"minute","1D":"hour","1W":"day","1M":"day","3M":"week","6M":"week","1Y":"month","ALL":"month"}[tr.tf]||tr.interval;$("trInterval").value=tr.interval;if(tr.tf!=="Custom")trLoad();trControls()};
+    $("trApply").onclick=()=>{const a=$("trFrom").valueAsDate,b=$("trTo").valueAsDate;if(!a||!b||a>b)return toast("Pick a valid date range.",1);tr.from=a.getTime();tr.to=b.getTime()+DAY-1;trLoad()};
+    $("trJump").onchange=async()=>{const v=$("trJump").value;if(!v)return;const t=new Date(v+"T12:00:00").getTime();
+      for(let i=0;i<12&&t<trMin()&&!authBr().every(b=>tr.exh[b.id]);i++)await trOlder();
+      tr.chart.centerOn(t)};
+    $("trStyle").onchange=e=>{tr.style=e.target.value;trBuild(false);const w=tr.chart.window();trAutoUnit(w[0],w[1])};
+    $("trInterval").onchange=e=>{tr.interval=e.target.value;tr.manualUnit=true;trBuild(false)};
+    $("trScroll").oninput=()=>{const r=trRange();tr.chart.centerOn(r[0]+(r[1]-r[0])*$("trScroll").value/1000)};
+    $("trToday").onclick=()=>tr.chart.centerOn(Date.now());
+    $("trIn").onclick=()=>tr.chart.zoom(.7);$("trOut").onclick=()=>tr.chart.zoom(1.4);
+    $("trReset").onclick=()=>{tr.chart.setWindow(trStart()||trMin()||Date.now()-SPAN["1W"],trEnd())};
+    trTimer=setInterval(()=>{if(tab==="trading")trLoad(false)},60000);   // keeps your zoom / position
+  }
+  if(key!==tr.key){
+    tr.key=key;tr.sel=new Set(A.length===1?[A[0].id]:[]);tr.combined=A.length>1;
+    trControls();trLoad();
+  }
+}
+function trControls(){
+  const A=authBr();
+  $("trTf").innerHTML=TFS.map(t=>`<button class="chip-f ${tr.tf===t?"on":""}" data-tf="${t}">${t}</button>`).join("");
+  if(tr.chart&&tr.key)trRiskRender();
+}
+const trMin=()=>Math.min(...Object.values(tr.raw).filter(a=>a.length).map(a=>a[0].t),Infinity);
+
+/* Zooming changes the candle size automatically: days → hours → minutes → seconds (until you pick one yourself). */
+let trUnitTimer=null;
+function trAutoUnit(a,b){
+  if(tr.manualUnit||tr.style!=="candle")return;
+  const span=b-a,u=span<=15*60e3?"second":span<=12*36e5?"minute":span<=8*DAY?"hour":span<=180*DAY?"day":span<=3*365*DAY?"week":"month";
+  if(u===tr.interval)return;
+  clearTimeout(trUnitTimer);trUnitTimer=setTimeout(()=>{tr.interval=u;$("trInterval").value=u;trBuild(false)},200);
+}
+async function trLoad(reset=true){
+  const A=authBr();
+  if(!A.length){$("trStats").innerHTML="";$("trLegend").innerHTML="";$("trNote").textContent="";tr.chart.setData([],{});
+    trRiskRender();return}
+  if(tr.loading)return;tr.loading=true;
+  const a=trStart();
+  await Promise.all(A.map(async b=>{
+    try{
+      const col=collection(db,"branches",b.id,"snapshots");
+      const snap=await getDocs(a?query(col,where("capturedAt",">=",Timestamp.fromMillis(a)),orderBy("capturedAt","asc"),limit(5000)):query(col,orderBy("capturedAt","asc"),limit(5000)));
+      let rows=snap.docs.map(d=>{const x=d.data();return {...x,t:x.capturedAt.toMillis()}});
+      if(a){const prev=await getDocs(query(col,where("capturedAt","<",Timestamp.fromMillis(a)),orderBy("capturedAt","desc"),limit(1)));
+        if(!prev.empty){const x=prev.docs[0].data();rows=[{...x,t:x.capturedAt.toMillis()}].concat(rows)}}
+      tr.raw[b.id]=rows;
+      tr.exh[b.id]=!a&&snap.size<5000;
+    }catch(e){tr.raw[b.id]=[];tr.exh[b.id]=true;toast("Could not read analytics for "+b.dormName+" ("+(e.code||e.message)+")",1)}
+  }));
+  tr.loading=false;trBuild(reset);
+}
+async function trOlder(){
+  const A=authBr().filter(b=>!tr.exh[b.id]);if(!A.length||tr.loading)return;tr.loading=true;
+  await Promise.all(A.map(async b=>{
+    const cur=tr.raw[b.id]||[],first=cur.length?cur[0].t:Date.now();
+    try{
+      const snap=await getDocs(query(collection(db,"branches",b.id,"snapshots"),where("capturedAt","<",Timestamp.fromMillis(first)),orderBy("capturedAt","desc"),limit(1000)));
+      if(snap.empty)tr.exh[b.id]=true;else tr.raw[b.id]=snap.docs.map(d=>{const x=d.data();return {...x,t:x.capturedAt.toMillis()}}).reverse().concat(cur);
+    }catch(e){tr.exh[b.id]=true}
+  }));
+  tr.loading=false;trBuild(false);
+}
+function trBucket(){const span=tr.tf==="Custom"&&tr.from?trEnd()-tr.from:SPAN[tr.tf]||400*DAY;return span<=2*DAY?9e5:span<=14*DAY?36e5:span<=120*DAY?216e5:DAY}
+const trRange=()=>{const a=isFinite(trMin())?trMin():Date.now()-90*DAY;let b=Date.now()+90*DAY;(tr.fcEnd||0)>b&&(b=tr.fcEnd);return[a-30*DAY,b+30*DAY]};
+function trSync(t0,t1){const r=trRange(),el=$("trScroll");if(!el)return;el.value=Math.max(0,Math.min(1000,Math.round(((t0+t1)/2-r[0])/(r[1]-r[0])*1000)))}
+/* Scheduled check-outs / reserved check-ins published in each snapshot (counts only, never names).
+   New snapshots carry the time ("2026-11-20T1200:1"); older ones only the date, which uses the stay rules:
+   check-out 12:00, check-in 14:00 (same as Reserve Client availability). */
+const STAY={out:[12,0],in:[14,0]};
+const parseEv=(str,kind="out")=>String(str||"").split(",").filter(Boolean).map(x=>{const i=x.lastIndexOf(":");if(i<1)return null;
+  const m=/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2})(\d{2}))?$/.exec(x.slice(0,i));if(!m)return null;
+  const [hh,mm]=m[4]!=null?[+m[4],+m[5]]:STAY[kind];return[new Date(+m[1],+m[2]-1,+m[3],hh,mm).getTime(),+x.slice(i+1)||0]}).filter(Boolean);
+const parseCo=str=>parseEv(str,"out");
+const evIn=(str,kind,a,b)=>parseEv(str,kind).filter(([t])=>t>a&&t<=b).reduce((n,[,c])=>n+c,0);
+function trBuild(resetWindow){
+  /* History = the recorded state of each dormitory. Beds only change when the Branch Admin records a change,
+     so a snapshot's values stay in effect until the next snapshot (drawn as steps), and the latest one stays in
+     effect until NOW. Nothing before a dormitory's first snapshot is drawn. Right of NOW = forecast. */
+  const A=authBr(),[mName,f,dec]=METRICS[tr.metric],nowT=Date.now();
+  const series=[],fcSeries=[],start=trStart();
+  const FIELDS=["total","vacant","occupied","maleVacant","femaleVacant","studentVacant","revieweeVacant","mixedVacant","mixedGroupVacant","acVacant"];
+  const val=(s,t)=>f({...s,t});
+  const stepPts=obs=>{const out=[];obs.forEach((o,i)=>{if(o.v==null)return;if(out.length&&o.v!==out[out.length-1].v)out.push({t:o.t,v:out[out.length-1].v});out.push(o)});
+    if(out.length)out.push({t:nowT,v:out[out.length-1].v,held:true});return out};
+  const branchObs=id=>(tr.raw[id]||[]).filter(x=>x.t<=nowT).map(x=>({t:x.t,v:val(x,x.t)}));
+  // combined: at every recorded moment, the sum of each dormitory's state in effect (only once all have data)
+  const combinedObs=()=>{const ev=A.flatMap(b=>(tr.raw[b.id]||[]).filter(x=>x.t<=nowT).map(x=>({id:b.id,x}))).sort((p,q)=>p.x.t-q.x.t),last={},out=[];
+    ev.forEach(({id,x})=>{last[id]=x;if(A.some(b=>!last[b.id]))return;const sum={t:x.t,checkouts:"",checkins:""};FIELDS.forEach(k=>sum[k]=A.reduce((n,b)=>n+(last[b.id][k]||0),0));
+      sum.checkouts=A.map(b=>last[b.id].checkouts||"").filter(Boolean).join(",");sum.checkins=A.map(b=>last[b.id].checkins||"").filter(Boolean).join(",");
+      const v=f(sum);if(v!=null)out.push({t:x.t,v})});return out};
+  const combo=tr.combined&&A.length>1;
+  if(combo)series.push({name:"Combined",color:"#f5b84b",combined:true,step:true,points:stepPts(combinedObs())});
+  A.forEach((b,i)=>{if(tr.sel.has(b.id))series.push({name:b.dormName,color:COLORS[i%COLORS.length],step:true,points:stepPts(branchObs(b.id))})});
+  const fmt=v=>(dec?v.toFixed(1):String(Math.round(v)))+(tr.metric.endsWith("Rate")?"%":"");
+  // candles: the real observations plus the state in effect at the start of each interval (so an hour with no new
+  // snapshot still shows the beds that were occupied during it)
+  const single=!combo?A.find(b=>tr.sel.has(b.id)):null;
+  const baseObs=single?branchObs(single.id):combo?combinedObs():[];
+  let obs=baseObs.slice();
+  if(baseObs.length){
+    const unit=tr.interval||"day",first=Math.max(baseObs[0].t,nowT-({second:3/24,minute:10,hour:120,day:1500}[unit]||4000)*DAY);
+    let k=CChart.intervalStart(first,unit),j=0,cur=null;const carried=[];
+    while(k<=nowT&&carried.length<20000){while(j<baseObs.length&&baseObs[j].t<=k){cur=baseObs[j];j++}if(cur)carried.push({t:k,v:cur.v,carried:true});k=CChart.intervalNext(k,unit)}
+    obs=obs.concat(carried).sort((p,q)=>p.t-q.t);
+  }
+  // ---- forecast (purple). CONFIRMED: from NOW, only scheduled check-outs (bed becomes vacant) and reserved
+  // check-ins (bed becomes occupied), at their date AND time. Past-due check-outs are NOT counted as vacant.
+  tr.reliability="";
+  const fcable=["vacant","occupied","vacRate","occRate"].includes(tr.metric);
+  const confirmed=(ids,name,color,combined)=>{
+    const snaps=ids.map(id=>(tr.raw[id]||[]).filter(x=>x.t<=nowT).slice(-1)[0]).filter(Boolean);if(snaps.length!==ids.length||!snaps.length)return null;
+    const evs=snaps.flatMap(x=>parseEv(x.checkouts,"out").map(([t,n])=>({t,n:+n})).concat(parseEv(x.checkins,"in").map(([t,n])=>({t,n:-n})))).filter(e=>e.t>nowT).sort((p,q)=>p.t-q.t);
+    const tot=snaps.reduce((n,x)=>n+(x.total||0),0);let vac=snaps.reduce((n,x)=>n+(x.vacant||0),0),res=snaps.reduce((n,x)=>n+Math.max(0,(x.total||0)-(x.vacant||0)-(x.occupied||0)),0);
+    const v=()=>f({total:tot,vacant:vac,occupied:tot-vac-res});
+    const p=[{t:nowT,v:v()}];evs.forEach(e=>{vac=Math.max(0,Math.min(tot,vac+e.n));p.push({t:e.t,v:v()})});
+    p.push({t:Math.max(p[p.length-1].t+14*DAY,nowT+30*DAY),v:p[p.length-1].v});
+    return {name:"Forecast · "+name+" (confirmed schedule)",forecast:true,kind:"confirmed",color,combined,points:p,events:evs.length};
+  };
+  if(fcable){
+    if(combo){const c=confirmed(A.map(b=>b.id),"Combined","#f5b84b",true);c&&fcSeries.push(c)}
+    A.forEach((b,i)=>{if(!tr.sel.has(b.id))return;const c=confirmed([b.id],b.dormName,COLORS[i%COLORS.length],false);c&&fcSeries.push(c)});
+    // TREND ESTIMATE for the main line: straight-line fit through the last 60 days of daily closing values (needs 14+).
+    const daily=CChart.ohlc(obs.filter(p=>p.t>=nowT-60*DAY),"day").map(c=>({x:(c.t0-nowT)/DAY,y:c.close}));
+    if(baseObs.length&&daily.length>=14){
+      const n=daily.length,mx=daily.reduce((q,p)=>q+p.x,0)/n,my=daily.reduce((q,p)=>q+p.y,0)/n,sxx=daily.reduce((q,p)=>q+(p.x-mx)**2,0);
+      const slope=sxx?daily.reduce((q,p)=>q+(p.x-mx)*(p.y-my),0)/sxx:0,icpt=my-slope*mx;
+      const sd=Math.sqrt(daily.reduce((q,p)=>q+(p.y-(icpt+slope*p.x))**2,0)/Math.max(1,n-2));
+      const ids=single?[single.id]:A.map(b=>b.id),cap=["vacRate","occRate"].includes(tr.metric)?100:ids.reduce((q,id)=>q+(((tr.raw[id]||[]).slice(-1)[0]||{}).total||0),0);
+      const clampV=v=>Math.max(0,Math.min(cap,v)),startV=baseObs[baseObs.length-1].v,pts=[],band=[];
+      for(let d=0;d<=90;d+=3){const pred=startV+slope*d,half=1.96*sd*Math.sqrt(1+1/n+(d-mx)**2/(sxx||1));pts.push({t:nowT+d*DAY,v:clampV(pred)});band.push({t:nowT+d*DAY,lo:clampV(pred-half),hi:clampV(pred+half)})}
+      fcSeries.push({name:"Forecast · trend estimate",forecast:true,kind:"trend",color:"#7c3aed",points:pts,band});
+      tr.reliability=`Trend estimate from ${n} days of history (shaded = 95% range). It is an estimate, not a confirmed outcome.`;
+    } else if(baseObs.length) tr.reliability=`Limited reliability: only ${daily.length} day${daily.length===1?"":"s"} of history, so no trend estimate is drawn (needs 14). The dashed line uses confirmed dates only.`;
+  } else tr.reliability="Forecasts are drawn for vacant/occupied beds and rates (the schedule has no gender or group breakdown).";
+  tr.fcEnd=fcSeries.reduce((m,x)=>Math.max(m,x.points[x.points.length-1].t),0);
+  const mins=trMin();
+  const RR=riskRules(),bands=tr.metric==="vacRate"?[{from:0,to:RR.modRate,color:"#16a34a",label:"Safe"},{from:RR.modRate,to:RR.hiRate,color:"#d97706",label:"Moderate risk"},{from:RR.hiRate,to:100,color:"#dc2626",label:"High risk"}]:null;
+  // Risk strip + orientation (feedback A-0005): vacancy-type metrics are drawn upside down so that high vacancy (risk)
+  // sits at the bottom and the safe side at the top. Zones use the same thresholds as the Operational risk panel.
+  const VAC_TYPE=["vacant","vacRate","male","female","student","reviewee","mixed","mixedgroup","aircon","upcoming"],invert=VAC_TYPE.includes(tr.metric);
+  const capIds=combo?A.map(b=>b.id):single?[single.id]:(series.length===1?[]:null),cap=capIds?capIds.reduce((q,id)=>q+(((tr.raw[id]||[]).filter(x=>x.t<=nowT).slice(-1)[0]||{}).total||0),0):0;
+  const zr=(m,M,lvl)=>({from:m,to:M,level:lvl});
+  let zones=null,zoneCap=null;
+  if(tr.metric==="vacRate"){zones=[zr(0,RR.modRate,"safe"),zr(RR.modRate,RR.hiRate,"normal"),zr(RR.hiRate,100,"risk")];zoneCap=100}
+  else if(tr.metric==="occRate"){zones=[zr(100-RR.modRate,100,"safe"),zr(100-RR.hiRate,100-RR.modRate,"normal"),zr(0,100-RR.hiRate,"risk")];zoneCap=100}
+  else if(cap&&tr.metric==="vacant"){const m=cap*RR.modRate/100,h=cap*RR.hiRate/100;zones=[zr(0,m,"safe"),zr(m,h,"normal"),zr(h,cap,"risk")];zoneCap=cap}
+  else if(cap&&tr.metric==="occupied"){const m=cap*(100-RR.modRate)/100,h=cap*(100-RR.hiRate)/100;zones=[zr(m,cap,"safe"),zr(h,m,"normal"),zr(0,h,"risk")];zoneCap=cap}
+  tr.chart.setData(series.concat(fcSeries),{style:tr.style||"line",unit:tr.interval||"day",obs,bands,fmt,latest:nowT,dataMin:isFinite(mins)?mins:nowT,exhausted:A.every(b=>tr.exh[b.id]),invert,zones,zoneCap});
+  $("trAxisNote").textContent=(invert?"Axis is upside down: higher vacancy is lower on the chart (risk at the bottom, safe at the top).":"Higher values are higher on the chart (safe at the top, risk at the bottom).")+(zones?" Left strip: green Safe · yellow Normal · red Risk, from the Thresholds.":" The risk strip is shown for vacant/occupied beds and rates"+(tr.metric==="vacant"||tr.metric==="occupied"?" when one dormitory or All combined is selected.":"."));
+  $("trInterval").disabled=tr.style!=="candle";
+  if(tr.style==="candle"&&!obs.length)tr.reliability="Candles need one dormitory (or All combined) with recorded data. "+tr.reliability;
+  trRiskRender();
+  if(resetWindow){const w0=start||(isFinite(mins)?mins:nowT-SPAN["1W"]),w1=trEnd();tr.chart.setWindow(w0,tr.tf==="Custom"?w1:w1+(w1-w0)*.2)}
+  // legend with trading-style indicators over the selected period
+  $("trLegend").innerHTML=series.map(s=>{const v=s.points.filter(p=>p.v!=null&&p.t>=(start||0));if(!v.length)return `<span class="lg"><i style="background:${s.color}"></i>${esc(s.name)} <span class="flat">no data</span></span>`;
+    const d=v[v.length-1].v-v[0].v,c=Math.abs(d)<.05?"flat":d>0?"up":"down",ar=c==="flat"?"FLAT →":d>0?"UP ↑":"DOWN ↓";
+    return `<span class="lg"><i style="background:${s.color}"></i>${esc(s.name)} <b>${fmt(v[v.length-1].v)}</b> <span class="${c}">${ar}${c==="flat"?"":" "+(d>0?"+":"")+(dec?d.toFixed(1):Math.round(d))}</span></span>`}).join("")||`<span class="det">Select a dormitory above to draw its line.</span>`;
+  // summary tiles from each branch's latest recorded snapshot
+  const latest=A.map(b=>(tr.raw[b.id]||[]).slice(-1)[0]).filter(Boolean),sum=k=>latest.reduce((x,s)=>x+(s[k]||0),0),T=sum("total"),V=sum("vacant");
+  const st=(i,c,n,t)=>`<div class="stat"><span class="ico ${c}">${icon(i)}</span><div><b>${n}</b><span>${t}</span></div></div>`;
+  const R0=sum("total")-sum("vacant")-sum("occupied"),up7=latest.reduce((n,x)=>n+evIn(x.checkouts,"out",nowT,nowT+7*DAY),0),up30=latest.reduce((n,x)=>n+evIn(x.checkouts,"out",nowT,nowT+30*DAY),0),in7=latest.reduce((n,x)=>n+evIn(x.checkins,"in",nowT,nowT+7*DAY),0);
+  $("trStats").innerHTML=st("users","",sum("occupied"),"Occupied beds now")+st("bed","g",V,"Vacant beds now")+st("trend","a",up7+(up30>up7?` <small>(${up30} in 30 days)</small>`:""),"Upcoming vacancies · next 7 days")
+    +st("inbox","",in7,"Scheduled check-ins · next 7 days")+st("shield","",Math.max(0,R0),"Reserved beds")+st("trend","r",T?(V/T*100).toFixed(1)+"%":"—","Vacancy rate · "+A.length+" dorm"+(A.length===1?"":"s"));
+  const age=latest.length?Math.max(...latest.map(x=>x.t)):0;
+  $("trNote").textContent=latest.length?"Left of NOW = recorded state (each record stays in effect until the next one; beds only change when the Branch Admin records it). Right of NOW = purple forecast: dashed = confirmed check-outs and reserved check-ins at their scheduled date and time; dotted = trend estimate. Upcoming vacancies stay counted as occupied until the tenant actually checks out. Latest record: "+new Date(age).toLocaleString([], {month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+". "+(tr.reliability||""):"No snapshots recorded yet. The first appears within about 15 minutes of approval while the Branch Admin has the app open.";
+}
+</script>
+<script src="menu.js"></script>
+<script src="datepick.js"></script>
+<script src="tutorial.js"></script>
+</body>
+</html>

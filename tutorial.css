@@ -1,0 +1,195 @@
+/* tutorial.css — hands-on tutorial overlay (feedback A-0030 … A-0033) */
+.vt-help-fab{position:fixed;z-index:80;width:34px;height:34px;border-radius:50%;border:1px solid rgba(124,92,255,.45);
+  background:linear-gradient(135deg,#7c5cff,#4f46e5);color:#fff;font:800 17px/1 'Space Grotesk','DM Sans',system-ui,sans-serif;cursor:pointer;
+  box-shadow:0 6px 18px rgba(79,70,229,.35);display:grid;place-items:center;transition:transform .18s,box-shadow .18s}
+.vt-help-fab:hover{transform:translateY(-1px) scale(1.06);box-shadow:0 10px 26px rgba(79,70,229,.45)}
+.vt-help-fab[hidden]{display:none}
+.vt-help-fab::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(124,92,255,.5);animation:vtPing 2.4s ease-out infinite}
+@keyframes vtPing{0%{transform:scale(.9);opacity:.9}70%,100%{transform:scale(1.35);opacity:0}}
+
+.vt-tut{position:fixed;inset:0;z-index:9000;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif}
+.vt-shade{position:fixed;pointer-events:auto;background:rgba(6,8,18,.48);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  opacity:0;transition:opacity .45s ease}
+.vt-tut.in .vt-shade{opacity:1}
+.vt-ring{position:fixed;border-radius:14px;box-shadow:0 0 0 3px #a78bfa,0 0 0 9px rgba(167,139,250,.28),0 0 40px rgba(167,139,250,.55);
+  transition:left .35s cubic-bezier(.2,.8,.2,1),top .35s cubic-bezier(.2,.8,.2,1),width .35s cubic-bezier(.2,.8,.2,1),height .35s cubic-bezier(.2,.8,.2,1),opacity .3s;
+  animation:vtGlow 1.8s ease-in-out infinite}
+@keyframes vtGlow{50%{box-shadow:0 0 0 3px #c4b5fd,0 0 0 12px rgba(167,139,250,.18),0 0 55px rgba(167,139,250,.75)}}
+.vt-arrow{position:fixed;width:44px;height:44px;color:#facc15;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45));transition:left .35s,top .35s,opacity .3s;animation:vtBob 1s ease-in-out infinite}
+.vt-arrow.up{transform:rotate(180deg);animation-name:vtBobUp}
+@keyframes vtBob{50%{translate:0 9px}}
+@keyframes vtBobUp{50%{translate:0 -9px}}
+/* cinematic letterbox bars */
+.vt-bar{position:fixed;left:0;right:0;height:0;background:#000;transition:height .55s cubic-bezier(.2,.8,.2,1);pointer-events:auto}
+.vt-bar.top{top:0}.vt-bar.bottom{bottom:0}
+.vt-tut.in .vt-bar{height:5.5vh}
+.vt-tut.out .vt-bar{height:0}.vt-tut.out .vt-shade,.vt-tut.out .vt-cap,.vt-tut.out .vt-ring,.vt-tut.out .vt-arrow{opacity:0!important}
+/* caption */
+.vt-cap{position:fixed;left:50%;bottom:calc(5.5vh + 18px);width:min(560px,calc(100vw - 32px));transform:translate(var(--vt-x,-50%),16px);opacity:0;pointer-events:auto;
+  padding:18px 20px 14px;border-radius:18px;background:rgba(10,12,24,.92);color:#f1f5f9;border:1px solid rgba(167,139,250,.35);
+  box-shadow:0 20px 50px rgba(0,0,0,.45);transition:top .35s,bottom .35s,left .35s,right .35s,width .25s}
+.vt-cap.show{animation:vtCapIn .5s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes vtCapIn{to{opacity:1;transform:translate(var(--vt-x,-50%),0)}}
+.vt-cap.top{bottom:auto;top:calc(5.5vh + 18px)}
+.vt-cap.center{bottom:auto;top:50%;margin-top:-90px}
+/* (the outside-click shake is done in tutorial.js with the separate "translate" property) */
+.vt-cap-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.vt-step{font-size:10.5px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#a78bfa}
+.vt-try{font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#111;background:#facc15;padding:2px 8px;border-radius:20px}
+.vt-cap h3{margin:0 0 6px;font:700 19px/1.25 'Space Grotesk','DM Sans',sans-serif;color:#fff}
+.vt-text{margin:0;font-size:14.5px;line-height:1.55;color:#e2e8f0;min-height:44px}
+.vt-cap-act{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.vt-cap-act button{border:0;border-radius:10px;padding:9px 16px;font:600 13.5px 'DM Sans',sans-serif;cursor:pointer}
+.vt-next{margin-left:auto;background:linear-gradient(135deg,#7c5cff,#4f46e5);color:#fff}
+.vt-back{background:rgba(255,255,255,.08);color:#e2e8f0}
+.vt-back[hidden],.vt-next[hidden],.vt-wait[hidden],.vt-try[hidden]{display:none}
+.vt-wait{margin-left:auto;font-size:12.5px;color:#facc15;display:inline-flex;align-items:center;gap:8px}
+.vt-wait::before{content:"";width:8px;height:8px;border-radius:50%;background:#facc15;animation:vtPing 1.2s ease-out infinite}
+.vt-more{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.vt-more button{background:rgba(255,255,255,.08);color:#e2e8f0;padding:7px 12px;font-size:12.5px}
+.vt-more button:hover{background:rgba(167,139,250,.25)}
+.vt-skip{position:fixed;right:18px;bottom:calc(5.5vh + 18px);pointer-events:auto;border:1px solid rgba(255,255,255,.25);border-radius:30px;padding:9px 18px;
+  background:rgba(10,12,24,.85);color:#fff;font:600 13px 'DM Sans',sans-serif;cursor:pointer;opacity:0;transition:opacity .4s .2s}
+.vt-tut.in .vt-skip{opacity:1}
+.vt-skip:hover{background:#fff;color:#111}
+@media (max-width:640px){.vt-cap{bottom:calc(5.5vh + 64px)}.vt-cap.top{top:calc(5.5vh + 10px)}.vt-text{font-size:13.5px}.vt-skip{right:12px}}
+@media (prefers-reduced-motion:reduce){.vt-ring,.vt-arrow,.vt-help-fab::after,.vt-wait::before{animation:none}.vt-cap.show{animation-duration:.01s}}
+
+/* A-0002 / A-0017: on Branch Admin the "?" is frozen just below the top bar; the strip under the bar keeps room for it */
+body.vt-fab-below-bar .shared-overview{padding-right:70px;}
+@media (max-width:640px){body.vt-fab-below-bar .shared-overview{padding-right:58px;}}
+
+/* ---- "Watch" demos: pretend pointer, previews, replay, and the two-account animation (A-0018 … A-0065) ---- */
+.vt-try.watch{background:#38bdf8;color:#04263a}
+.vt-replay{background:rgba(255,255,255,.08);color:#e2e8f0}
+.vt-replay[hidden]{display:none}
+.vt-cursor{position:fixed;left:0;top:0;z-index:3;width:26px;height:26px;margin:-3px 0 0 -4px;opacity:0;pointer-events:none;
+  transition:transform .6s cubic-bezier(.45,.05,.25,1),opacity .25s;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
+.vt-cursor.on{opacity:1}
+.vt-cursor svg{width:26px;height:26px;display:block}
+.vt-cursor i{position:absolute;left:2px;top:2px;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:3px solid #facc15;opacity:0}
+.vt-cursor.tap i{animation:vtTap .5s ease-out}
+@keyframes vtTap{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(1.6)}}
+.vt-ghosts{position:fixed;inset:0;pointer-events:none;z-index:2}
+.vt-ghost{position:fixed;transform:translate(-50%,-50%);animation:vtGhostIn .45s cubic-bezier(.2,.8,.2,1) both;transition:opacity .5s,transform .5s}
+.vt-ghost.vt-out{opacity:0;transform:translate(-50%,-50%) scale(.6)}
+@keyframes vtGhostIn{from{opacity:0;transform:translate(-50%,-40%) scale(.9)}to{opacity:1;transform:translate(-50%,-50%)}}
+.vt-demo-badge{padding:10px 14px;border-radius:12px;background:#7c3aed;color:#fff;font:700 14px 'DM Sans',sans-serif;box-shadow:0 10px 30px rgba(124,58,237,.45);white-space:nowrap;text-align:center}
+.vt-demo-badge small,.vt-demo-shape small{display:block;font-weight:500;font-size:11px;opacity:.85}
+.vt-demo-shape{width:150px;height:90px;display:grid;place-content:center;text-align:center;border-radius:10px;background:#fde68a;border:2px dashed #b45309;color:#78350f;font:700 15px 'DM Sans',sans-serif;box-shadow:0 10px 26px rgba(180,83,9,.3)}
+.vt-drag-ghost{position:fixed!important;margin:0!important;z-index:2;opacity:.92;box-shadow:0 22px 46px rgba(0,0,0,.35)!important;transition:transform 1.05s cubic-bezier(.45,.05,.25,1),opacity .4s;pointer-events:none;overflow:hidden}
+.vt-drag-ghost.vt-out{opacity:0}
+.vt-drag-label{position:absolute;right:8px;bottom:8px;padding:3px 9px;border-radius:20px;background:#facc15;color:#111;font:700 11px 'DM Sans',sans-serif}
+.vt-drop-hint{outline:3px dashed #facc15!important;outline-offset:3px;animation:vtDrop 1s ease-in-out infinite}
+@keyframes vtDrop{50%{outline-color:rgba(250,204,21,.35)}}
+.vt-cap.wide{width:min(720px,calc(100vw - 32px))}
+.vt-media{margin-top:10px}
+.vt-media[hidden]{display:none}
+
+/* two-account transfer animation: each part appears at its moment (s1 … s6) when .play is set */
+.tr-anim{position:relative;display:grid;grid-template-columns:1fr 120px 1fr;gap:10px;align-items:stretch;font-size:12.5px}
+.tr-acc{padding:10px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.tr-acc b{display:block;color:#fff;font-size:13px}.tr-acc small{color:#94a3b8}
+.tr-acc.old{border-color:rgba(251,191,36,.4)}.tr-acc.new{border-color:rgba(52,211,153,.4)}
+.tr-ui{display:grid;gap:6px;margin-top:8px;min-height:120px;align-content:start}
+.tr-ui span{display:block;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.07);color:#e2e8f0;opacity:0;transform:translateY(6px)}
+.tr-btn{background:#4f46e5!important;color:#fff!important;text-align:center;font-weight:700}
+.tr-code,.tr-input{font:700 14px 'Space Grotesk',monospace;letter-spacing:.06em;text-align:center;background:rgba(250,204,21,.15)!important;color:#fde68a!important}
+.tr-req em{float:right;font-style:normal;font-weight:800;color:#86efac}
+.tr-done{background:rgba(52,211,153,.18)!important;color:#86efac!important;font-weight:700}
+.tr-wait{color:#fcd34d!important}
+.tr-mid{position:relative}
+.tr-mid span{position:absolute;left:0;right:0;top:50%;padding:5px 6px;border-radius:8px;text-align:center;font-weight:700;opacity:0}
+.tr-codefly{background:rgba(250,204,21,.2);color:#fde68a;font:700 11px 'Space Grotesk',monospace}
+.tr-pack{background:rgba(52,211,153,.2);color:#86efac;font-size:11px}
+.tr-steps{grid-column:1/-1;display:flex;gap:6px;margin:4px 0 0;padding:0;list-style:none;counter-reset:t}
+.tr-steps li{flex:1;padding:5px 6px;border-radius:8px;background:rgba(255,255,255,.05);color:#94a3b8;font-size:11px;counter-increment:t;opacity:.45;transition:opacity .3s,background .3s,color .3s}
+.tr-steps li::before{content:counter(t) ". ";font-weight:800}
+.tr-anim.play .s1{animation:trShow .4s .4s forwards}
+.tr-anim.play .s2{animation:trShow .4s 1.4s forwards}
+.tr-anim.play .tr-codefly.s3{animation:trFlyR 1.2s 2.4s forwards}
+.tr-anim.play .tr-input.s3{animation:trShow .4s 3.5s forwards}
+.tr-anim.play .s3b{animation:trShow .4s 4s forwards}
+.tr-anim.play .s4{animation:trShow .4s 4.8s forwards}
+.tr-anim.play .tr-pack.s5{animation:trFlyR 1.4s 6s forwards}
+.tr-anim.play .s6{animation:trShow .4s 7.5s forwards}
+.tr-anim.play .tr-steps li.s1{animation:trStep .3s .4s forwards}
+.tr-anim.play .tr-steps li.s3{animation:trStep .3s 3.5s forwards}
+.tr-anim.play .tr-steps li.s4{animation:trStep .3s 4.8s forwards}
+.tr-anim.play .tr-steps li.s5{animation:trStep .3s 6s forwards}
+@keyframes trShow{to{opacity:1;transform:none}}
+@keyframes trFlyR{0%{opacity:0;transform:translate(-90%,-50%)}20%{opacity:1}80%{opacity:1}100%{opacity:0;transform:translate(90%,-50%)}}
+@keyframes trStep{to{opacity:1;background:rgba(124,92,255,.3);color:#fff}}
+@media (max-width:640px){.tr-anim{grid-template-columns:1fr 60px 1fr;font-size:11px}.tr-steps{flex-wrap:wrap}}
+@media (prefers-reduced-motion:reduce){.vt-cursor{transition:none}.tr-anim .tr-ui span,.tr-anim .tr-steps li{opacity:1!important;transform:none!important;animation:none!important}.tr-mid span{display:none}}
+@media (max-width:1380px){body.vt-fab-below-bar .shell .page{padding-right:64px;}}
+
+/* A-0006: the highlighted part can only be used on "Try it" steps */
+.vt-block{position:fixed;pointer-events:auto;cursor:not-allowed;background:transparent}
+.vt-tut.allow-hole .vt-block{pointer-events:none;width:0!important;height:0!important}
+/* A-0007: a "Try it" step can always be skipped */
+.vt-skipstep{background:none;color:#cbd5e1;text-decoration:underline;padding:9px 6px!important}
+.vt-skipstep[hidden]{display:none}
+
+/* timed scenes inside the tutorial (A-0084, A-0087, A-0091): each part appears at its moment */
+.md{display:grid;gap:10px;font-size:12.5px}
+.md-2{grid-template-columns:1fr 1fr}
+.md-3{grid-template-columns:1fr 1fr 1fr}
+.md-pane{display:grid;align-content:start;gap:6px;min-height:170px;padding:10px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.md-pane > b{color:#fff;font-size:13px}.md-pane > small{color:#94a3b8;margin-top:-4px}
+.md [data-at]{opacity:0;transform:translateY(6px);transition:opacity .4s,transform .4s,max-height .4s;}
+.md [data-at].on{opacity:1;transform:none}
+.md [data-at].gone{display:none}
+.md-box,.md-input,.md-row,.md-board,.md-card,.md-call,.md-tabs{padding:7px 9px;border-radius:8px;background:rgba(255,255,255,.08);color:#e2e8f0;line-height:1.4}
+.md-box code{font:700 12px 'Space Grotesk',monospace;color:#fde68a}
+.md-msg{padding:6px 9px;border-radius:14px 14px 14px 4px;background:#4f46e5;color:#fff;width:max-content;max-width:100%}
+.md-act{background:rgba(52,211,153,.16);color:#a7f3d0}
+.md-input span{float:right;font-weight:700;color:#fde68a}
+.md-btn{padding:7px 10px;border-radius:8px;background:#4f46e5;color:#fff;font-weight:700;text-align:center}
+.md-btn.md-mini{display:inline-block;float:right;padding:2px 8px;font-size:11px;font-style:normal}
+.md-btn.md-wait{background:rgba(245,158,11,.2);color:#fcd34d}
+.md-btn.md-good{background:#059669}
+.md-ok{background:rgba(52,211,153,.18);color:#86efac;font-weight:700}
+.md-bad{background:rgba(251,113,133,.18);color:#fda4af;font-weight:700}
+.md-board{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.md-board em{font-style:normal;color:#86efac;font-size:11px}
+.md-upd{box-shadow:0 0 0 2px rgba(52,211,153,.5)}
+.md-beds{display:inline-flex;gap:3px}
+.md-beds i{width:12px;height:8px;border-radius:2px;background:#60a5fa}
+.md-beds i.v{background:#34d399}
+.md-note{color:#94a3b8;font-size:11.5px}
+.md-row span{color:#94a3b8;margin-left:4px;font-size:11px}
+.md-blocked{background:rgba(251,113,133,.12)}
+.md-tabs{background:none;padding:2px 0;color:#fda4af}
+.md-card{display:grid;gap:2px;border:1px solid rgba(251,113,133,.45);background:rgba(251,113,133,.08)}
+.md-card b{color:#fda4af}
+.md-call{background:#059669;color:#fff;font-weight:700;animation:mdRing 1s ease-in-out infinite}
+@keyframes mdRing{50%{transform:scale(1.03)}}
+.md-steps{grid-column:1/-1;display:flex;gap:6px;margin:2px 0 0;padding:0;list-style:none;counter-reset:m}
+.md-steps li{flex:1;padding:5px 6px;border-radius:8px;background:rgba(255,255,255,.05);color:#94a3b8;font-size:11px;counter-increment:m;opacity:.45!important;transform:none!important}
+.md-steps li::before{content:counter(m) ". ";font-weight:800}
+.md-steps li.on{opacity:1!important;background:rgba(124,92,255,.3);color:#fff}
+@media (max-width:640px){.md-2,.md-3{grid-template-columns:1fr}.md-pane{min-height:0}.md-steps{flex-wrap:wrap}}
+/* Viewer: keep a strip on the right for the "?" button under the top bar (A-0001) */
+@media (max-width:1320px){body.vt-fab-below-bar .v-main{padding-right:max(64px,4vw)}}
+
+/* voice button in the tutorial box (text to speech) */
+.vt-grow{flex:1}
+.vt-voice{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#fff;cursor:pointer;padding:0}
+.vt-voice[hidden]{display:none}
+.vt-voice:hover{background:rgba(255,255,255,.18)}
+.vt-voice[aria-pressed="true"]{background:#7c3aed;border-color:#7c3aed}
+.vt-voice:focus-visible{outline:2px solid #facc15;outline-offset:2px}
+
+/* where the tutorial box sits (tutorial.js picks the place that covers the least of the example) */
+.vt-cap[data-spot="top"],.vt-cap[data-spot="tl"],.vt-cap[data-spot="tr"]{bottom:auto;top:calc(5.5vh + 18px)}
+.vt-cap[data-spot="center"]{bottom:auto;top:50%;margin-top:-90px}
+.vt-cap[data-spot="ml"],.vt-cap[data-spot="mr"]{bottom:auto;top:50%;margin-top:-100px}
+.vt-cap[data-spot="bl"],.vt-cap[data-spot="tl"],.vt-cap[data-spot="ml"]{left:16px;--vt-x:0%}
+.vt-cap[data-spot="br"],.vt-cap[data-spot="tr"],.vt-cap[data-spot="mr"]{left:auto;right:16px;--vt-x:0%}
+/* "Watch" steps: a smaller box so the example stays visible */
+.vt-cap.compact{width:min(400px,calc(100vw - 32px));padding:14px 16px 12px}
+.vt-cap.compact h3{font-size:15px}
+.vt-cap.compact .vt-text{font-size:13.5px}
+.vt-cap.compact.wide{width:min(560px,calc(100vw - 32px))}
+@media (max-width:640px){.vt-cap[data-spot="top"]{top:calc(5.5vh + 10px)}}

@@ -1,0 +1,40 @@
+VACANCY TRACKER - TRY IT ON THIS COMPUTER (LOCAL TEST MODE)
+
+Easiest way:
+  1. Double-click  START-LOCAL.bat
+  2. Your browser opens the FRONT PAGE. Leave the black window open while you use it.
+  3. Click Sign in, choose your role, type your EMAIL and password, press Log in. Sample accounts:
+        sample.one@example.com   password Sample1234   (has rooms and tenants)
+        sample.two@example.com   password Sample5678
+     Or click "Get started" to create an account with any email (two quick survey questions come first).
+     The role you chose (Branch Admin, Dormitory Viewer, Super Admin or Marketing Directory) then opens.
+     Each browser tab keeps its own sign-in: signing out in one tab does not sign out the others.
+     A brand-new tab starts with your latest sign-in.
+  4. Press Ctrl+C in the black window (or close it) to stop.
+
+Using Visual Studio Code (Live Server / Live Preview):
+  1. In VS Code: File > Open Folder... and choose this proj folder.
+  2. VS Code asks "Allow automatic tasks?" - choose Allow. The app server then starts by itself
+     every time you open the folder (Terminal panel: "Start Vacancy Tracker").
+     If it does not ask: Terminal > Run Task... > Start Vacancy Tracker (local test mode).
+  3. Right-click index.html (the front page) > "Open with Live Server" (or Live Preview). Sign in there.
+     The preview page talks to the app server on http://127.0.0.1:8080 automatically.
+  The server must stay running (it holds the data and the login). Editing HTML/CSS/JS files
+  is fine - the page reloads and you stay logged in.
+
+Manual way (if the .bat does not work), in PowerShell inside this folder:
+  python -m ensurepip --upgrade
+  python -m pip install flask
+  python run_local.py
+
+What local test mode is:
+  - Data and accounts are saved in the folder  local-data  (a SQLite file) and are kept between
+    restarts. Delete that folder only if you want to start fresh.
+  - Accounts use a temporary username + password stored on this computer (hashed).
+    Firebase is not used. Your Google account is not needed.
+  - The AI assistant works. It uses scikit-learn if your PC allows it, otherwise a built-in
+    backup matcher that needs nothing.
+  - Only this computer can open it (127.0.0.1). Do NOT put local mode on the internet.
+  - "Import my existing rooms" works here and loads your own rooms from seed-data.js.
+
+For real use online (PostgreSQL + Firebase sign-in), follow SETUP-GUIDE.md.

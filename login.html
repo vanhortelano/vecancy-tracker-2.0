@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — Vecancy Tracker</title>
+<meta name="description" content="Create your Vecancy Tracker account, or choose your role and log in.">
+<script>
+/* same light / dark choice as the front page; ?embed=1 = shown inside the panel on the front page */
+(function(){var t=null;try{t=localStorage.getItem("vtLandingTheme")}catch(e){}
+  if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+  document.documentElement.dataset.theme=t;
+  if(/[?&]embed=1/.test(location.search))document.documentElement.classList.add("embed");})();
+</script>
+<!-- local test mode flag from the app server, then where the API is (same as the other pages) -->
+<script src="mode.js"></script>
+<script src="api-base.js"></script>
+<link rel="stylesheet" href="auth-ui.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Feedback A-0094 … A-0097: a large panel (80% of the screen) over the blurred front page.
+   Get started = a short survey, a "problems solved" moment, then create the account, then log in.
+   Sign in = choose your role (the explanation opens under it), then log in with the remembered account or another one. */
+:root{--paper:#F5F7FC;--card:#fff;--ink:#172033;--soft:#5d6779;--line:#E4E8F0;--line-strong:#cfd5e3;--accent:#312e81;--accent-hi:#272463;--link:#312e81;--field:#fff;--chip:#eef0fb;
+  --vacant:#059669;--overdue:#DC4C4C}
+:root[data-theme="dark"]{--paper:#0b0f1a;--card:#121827;--ink:#eef2ff;--soft:#9aa7bc;--line:rgba(255,255,255,.09);--line-strong:rgba(255,255,255,.18);--accent:#6c5ce7;--accent-hi:#7f71f2;--link:#a5b4fc;--field:#0d1320;--chip:#1a2136;
+  --vacant:#34d399;--overdue:#fb7185}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;color:var(--ink);font:400 16px/1.55 'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;background:var(--paper)}
+html:not(.embed) body{background:#0e1222 url("assets/front/front-blur.jpg") center top/cover no-repeat;display:grid;place-items:center;min-height:100vh;padding:20px}
+html:not(.embed) body::before{content:"";position:fixed;inset:0;background:rgba(15,18,35,.34);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+h1,h2,h3{font-family:'Space Grotesk','DM Sans',sans-serif;margin:0;letter-spacing:-.015em;line-height:1.15}
+p{margin:0}
+button,input,textarea{font:inherit;color:inherit}
+a{color:var(--link)}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px}
+h1[tabindex]:focus{outline:none}
+
+.panel{position:relative;display:grid;grid-template-columns:1fr;width:100%;height:100%;background:var(--paper);overflow:hidden}
+html:not(.embed) .panel{width:min(80vw,1240px);height:min(88vh,860px);border-radius:24px;box-shadow:0 60px 120px -40px rgba(10,12,30,.6),0 0 0 1px rgba(255,255,255,.12);animation:panelIn .55s cubic-bezier(.2,.8,.2,1) both}
+@keyframes panelIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
+
+.brand{display:inline-flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:700 18px 'Space Grotesk',sans-serif}
+.brand .vt-lg{height:36px}
+
+/* right: the steps */
+.side{position:relative;display:flex;flex-direction:column;min-height:0}
+.side-top{display:flex;align-items:center;gap:14px;padding:16px 20px 12px 24px;border-bottom:1px solid var(--line)}
+.side-top .brand{color:var(--ink)}
+.crumb{padding-left:14px;border-left:1px solid var(--line)}
+.crumb{font-size:14px;font-weight:600;color:var(--soft)}
+.icon-btn{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line-strong);border-radius:10px;background:var(--card);color:var(--ink);cursor:pointer;text-decoration:none}
+.icon-btn svg{width:18px;height:18px}
+.side-top .icon-btn:first-of-type{margin-left:auto}
+:root[data-theme="dark"] .moon,:root:not([data-theme="dark"]) .sun{display:none}
+.scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:10px clamp(20px,4vw,56px) 28px}
+.view{width:min(560px,100%);margin:0 auto;padding:22px 0 10px;animation:viewIn .45s cubic-bezier(.2,.8,.2,1) both}
+.view-login{width:min(1000px,100%)}
+.login-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(20px,4vw,48px);margin-top:18px;align-items:start}
+.col-title{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-weight:700;font-size:15px}
+.col-title span{width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:#fff;font-size:13px}
+.login-col .roles{margin-top:0}
+.methods{display:grid;gap:10px}
+.method{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 16px;border:1px solid var(--line-strong);border-radius:12px;background:var(--card);font-weight:600;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.method svg{width:20px;height:20px}
+.method:hover{border-color:var(--accent-hi)}
+.method[aria-checked="true"]{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.or{display:flex;align-items:center;gap:10px;color:var(--soft);font-size:13px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line-strong)}
+#loginForm{margin-top:14px}
+.view[hidden]{display:none}
+@keyframes viewIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+.view h1{font-size:clamp(26px,2.8vw,34px)}
+.lead{margin-top:8px;color:var(--soft)}
+.dots{display:flex;gap:6px;margin-bottom:16px}
+.dots i{width:24px;height:4px;border-radius:4px;background:var(--line-strong)}
+.dots i.on{background:var(--accent)}
+
+/* survey choices */
+.choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:22px}
+.choice{display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;text-align:left;border:1px solid var(--line-strong);border-radius:12px;background:var(--card);cursor:pointer;transition:border-color .2s,background-color .2s,transform .15s}
+.choice:hover{border-color:var(--accent-hi)}
+.choice:active{transform:scale(.98)}
+.choice[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--card));box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.choice .ico{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:8px;background:var(--chip);font-weight:800;font-size:13px}
+.choice .ico svg{width:17px;height:17px}
+.choice span:last-child{font-weight:600;font-size:15px;line-height:1.3}
+.choices.one-col{grid-template-columns:1fr}
+.other{margin-top:10px}
+.other[hidden]{display:none}
+.actions{display:flex;align-items:center;gap:12px;margin-top:24px}
+.actions .grow{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;border-radius:11px;border:1px solid transparent;font-weight:600;font-size:16px;cursor:pointer;text-decoration:none;transition:background-color .2s,opacity .2s}
+.btn-main{background:var(--accent);color:#fff}
+.btn-main:hover{background:var(--accent-hi)}
+.btn-main:disabled{opacity:.45;cursor:not-allowed}
+.btn-wide{width:100%}
+.btn-plain{background:none;color:var(--soft);padding:13px 6px}
+.btn-plain:hover{color:var(--ink)}
+.field{display:block;margin-top:14px}
+.field span{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.field input,.other input{width:100%;padding:12px 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--field);font-size:16px}
+.field input:focus,.other input:focus{outline:0;border-color:var(--accent-hi);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+.pw{position:relative}
+.pw button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--soft);font-size:13px;font-weight:600;cursor:pointer;padding:6px}
+.msg{min-height:1.5em;margin-top:10px;font-size:14.5px;color:var(--soft)}
+.msg.bad{color:#dc2626}:root[data-theme="dark"] .msg.bad{color:#fca5a5}
+.msg.good{color:var(--vacant)}
+.foot{margin-top:18px;font-size:15px;color:var(--soft)}
+.foot button{border:0;background:none;padding:0;color:var(--link);font-weight:600;cursor:pointer;text-decoration:underline}
+
+/* the "problems solved" moment */
+.solved{text-align:center}
+.face{width:120px;height:120px;margin:6px auto 0;display:block}
+.face .head{fill:#facc15;stroke:#b45309;stroke-width:3}
+.face .mouth{fill:none;stroke:#78350f;stroke-width:5;stroke-linecap:round;transition:d .9s cubic-bezier(.3,1.6,.5,1)}
+.face .brow{stroke:#78350f;stroke-width:4;stroke-linecap:round;transition:transform .7s}
+.face .eye{fill:#78350f;transition:transform .3s}
+.face .brow.l{transform-origin:43px 40px}.face .brow.r{transform-origin:77px 40px}
+.face.happy .brow.l{transform:translateY(-4px) rotate(21deg)}
+.face.happy .brow.r{transform:translateY(-4px) rotate(-21deg)}
+.face.happy{animation:bounce 1s .3s cubic-bezier(.3,1.6,.5,1)}
+@keyframes bounce{30%{transform:translateY(-10px) scale(1.06)}}
+.solved h1{margin-top:12px}
+.fixes{list-style:none;margin:20px 0 0;padding:0;display:grid;gap:10px;text-align:left}
+.fixes li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);opacity:0;transform:translateY(10px);animation:fixIn .5s cubic-bezier(.2,.8,.2,1) forwards}
+.fixes .tick{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb,var(--vacant) 15%,var(--card));color:var(--vacant);font-weight:800}
+.fixes s{display:block;color:var(--soft);font-size:13.5px;text-decoration-color:var(--overdue)}
+.fixes b{display:block;font-size:15px}
+@keyframes fixIn{to{opacity:1;transform:none}}
+.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;top:-10px;width:8px;height:12px;border-radius:2px;animation:fall 2.2s cubic-bezier(.3,.6,.4,1) forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.2}}
+
+/* roles: one under the other; the chosen one opens its explanation */
+.roles{display:grid;gap:8px;margin-top:20px}
+.role{border:1px solid var(--line-strong);border-radius:14px;background:var(--card);transition:border-color .2s,box-shadow .2s}
+.role.open{border-color:color-mix(in srgb,var(--c) 70%,transparent);box-shadow:0 12px 28px -18px color-mix(in srgb,var(--c) 80%,transparent)}
+.role-head{display:grid;grid-template-columns:40px 1fr 22px;gap:12px;align-items:center;width:100%;padding:12px 14px;border:0;background:none;text-align:left;cursor:pointer}
+.role-head svg.r-ico{width:40px;height:40px;padding:9px;border-radius:11px;background:color-mix(in srgb,var(--c) 12%,var(--card));fill:none;stroke:var(--c);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.role-head b{font-size:16px}
+.role-head .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--line-strong);transition:border-color .2s,box-shadow .2s}
+.role.open .radio{border-color:var(--c);box-shadow:inset 0 0 0 4px var(--card),inset 0 0 0 10px var(--c)}
+.role-more{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s cubic-bezier(.2,.8,.2,1)}
+.role.open .role-more{grid-template-rows:1fr}
+.role-more > div{overflow:hidden}
+.role-more ul{margin:0;padding:0 16px 14px 66px;color:var(--soft);font-size:14.5px}
+.role-more li{margin-top:4px}
+
+/* remembered account */
+.acct-title{margin:22px 0 8px;font-size:14px;font-weight:600;color:var(--soft)}
+.acct{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line-strong);border-radius:14px;background:var(--card)}
+.acct .av{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700}
+.acct .av svg{width:20px;height:20px}
+.acct small{display:block;color:var(--soft);font-size:13px}
+.acct b{display:block;word-break:break-all}
+.acct .ok{margin-left:auto;color:var(--vacant);font-weight:800}
+.other-acct{display:inline-block;margin-top:10px;border:0;background:none;padding:0;color:var(--link);font-weight:600;cursor:pointer;text-decoration:underline;font-size:14.5px}
+.quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.quick button{padding:6px 11px;border:1px solid var(--line);border-radius:30px;background:var(--card);font-size:13px;cursor:pointer}
+.quick button:hover{border-color:var(--accent-hi)}
+.note{margin-top:12px;font-size:12.5px;color:var(--soft)}
+#hostedMount .vt-auth{box-shadow:none;padding:0;background:none}
+html.leaving .panel{animation:leave .45s cubic-bezier(.7,0,.2,1) forwards}
+@keyframes leave{to{opacity:0;transform:scale(.985);filter:blur(4px)}}
+
+@media(max-width:820px){.login-cols{grid-template-columns:1fr}}
+@media(max-width:900px){
+  .side-top{padding:10px 12px 10px 16px}
+  .side-top .brand .vt-lg{height:30px}
+  html:not(.embed) body{padding:0}
+  html:not(.embed) .panel{width:100vw;height:100dvh;border-radius:0}
+}
+@media(max-width:520px){.choices{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.fixes li{opacity:1;transform:none}}
+</style>
+<link rel="stylesheet" href="brand.css">
+<link rel="icon" type="image/png" href="assets/brand/mark-light.png">
+</head>
+<body>
+<div class="panel">
+
+  <main class="side">
+    <div class="side-top">
+      <a class="brand" href="index.html" aria-label="Vecancy Tracker home">
+        <span class="vt-lg lg-full"><img class="lg-l" src="assets/brand/logo-light.webp" width="507" height="166" alt="Vecancy Tracker"><img class="lg-d" src="assets/brand/logo-dark.webp" width="507" height="168" alt="Vecancy Tracker"></span></a>
+      <span class="crumb" id="crumb">Log in</span>
+      <button class="icon-btn" type="button" id="themeBtn" aria-label="Switch between light and dark mode" title="Light / dark mode">
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <!-- A-0094: one clear way back — a close button inside the front page, a Home button when opened on its own -->
+      <button class="icon-btn" type="button" id="closeBtn" aria-label="Close" title="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+
+    <div class="scroll" id="scroll">
+      <!-- GET STARTED 1: how did you find us -->
+      <section class="view" id="vSource" hidden aria-labelledby="tSource">
+        <div class="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
+        <h1 id="tSource" tabindex="-1">How did you hear about us?</h1>
+        <p class="lead">One quick question before you create your account.</p>
+        <div class="choices" id="srcChoices" role="group" aria-label="Where you heard about Vecancy Tracker">
+          <button class="choice" type="button" data-v="youtube" aria-pressed="false"><span class="ico" style="background:#fee2e2;color:#dc2626"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 15.5v-7l6 3.5z"/></svg></span><span>YouTube</span></button>
+          <button class="choice" type="button" data-v="tiktok" aria-pressed="false"><span class="ico" style="background:#e0f2fe;color:#0f172a">♪</span><span>TikTok</span></button>
+          <button class="choice" type="button" data-v="facebook" aria-pressed="false"><span class="ico" style="background:#dbeafe;color:#1d4ed8">f</span><span>Facebook</span></button>
+          <button class="choice" type="button" data-v="instagram" aria-pressed="false"><span class="ico" style="background:#fce7f3;color:#be185d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.5"/></svg></span><span>Instagram</span></button>
+          <button class="choice" type="button" data-v="search" aria-pressed="false"><span class="ico" style="background:#dcfce7;color:#15803d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg></span><span>Google or another search</span></button>
+          <button class="choice" type="button" data-v="friend" aria-pressed="false"><span class="ico" style="background:#fef3c7;color:#b45309"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 11a3 3 0 1 0 0-6M21 20a6 6 0 0 0-4-5.6"/></svg></span><span>A friend or co-worker</span></button>
+          <button class="choice" type="button" data-v="other" aria-pressed="false"><span class="ico">…</span><span>Somewhere else</span></button>
+        </div>
+        <label class="other" id="srcOtherWrap" hidden><input id="srcOther" maxlength="200" placeholder="Where? (optional)"></label>
+        <div class="actions"><button class="btn btn-plain" type="button" data-skip="vProblem">Skip</button><span class="grow"></span><button class="btn btn-main" type="button" id="srcNext" disabled>Next</button></div>
+        <p class="foot">Already have an account? <button type="button" data-goto="login">Log in</button></p>
+      </section>
+
+      <!-- GET STARTED 2: what is hard right now -->
+      <section class="view" id="vProblem" hidden aria-labelledby="tProblem">
+        <div class="dots" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+        <h1 id="tProblem" tabindex="-1">What's hard for you right now?</h1>
+        <p class="lead">Pick everything that sounds familiar.</p>
+        <div class="choices one-col" id="probChoices" role="group" aria-label="Problems you have now">
+          <button class="choice" type="button" data-v="free_beds" aria-pressed="false"><span class="ico">🛏</span><span>Knowing which beds are free</span></button>
+          <button class="choice" type="button" data-v="double_booking" aria-pressed="false"><span class="ico">⚠</span><span>Two people booked for the same bed</span></button>
+          <button class="choice" type="button" data-v="checkouts" aria-pressed="false"><span class="ico">⏰</span><span>Keeping track of check-outs and overdue tenants</span></button>
+          <button class="choice" type="button" data-v="agents_asking" aria-pressed="false"><span class="ico">☎</span><span>Agents keep asking what's available</span></button>
+          <button class="choice" type="button" data-v="paper_records" aria-pressed="false"><span class="ico">📒</span><span>Records on paper or in spreadsheets</span></button>
+          <button class="choice" type="button" data-v="head_office" aria-pressed="false"><span class="ico">🏢</span><span>Reporting to head office</span></button>
+          <button class="choice" type="button" data-v="other" aria-pressed="false"><span class="ico">…</span><span>Something else</span></button>
+        </div>
+        <label class="other" id="probOtherWrap" hidden><input id="probOther" maxlength="200" placeholder="Tell us in a few words (optional)"></label>
+        <div class="actions"><button class="btn btn-plain" type="button" data-back="vSource">Back</button><span class="grow"></span><button class="btn btn-main" type="button" id="probNext" disabled>Next</button></div>
+      </section>
+
+      <!-- GET STARTED 3: problems solved -->
+      <section class="view solved" id="vSolved" hidden aria-labelledby="tSolved">
+        <div class="dots" aria-hidden="true" style="justify-content:center"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+        <svg class="face" id="face" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="head" cx="60" cy="60" r="54"/>
+          <line class="brow l" x1="34" y1="44" x2="52" y2="37"/><line class="brow r" x1="86" y1="44" x2="68" y2="37"/>
+          <circle class="eye" cx="44" cy="54" r="6"/><circle class="eye" cx="76" cy="54" r="6"/>
+          <path class="mouth" id="mouth" d="M38 90 Q60 74 82 90"/>
+        </svg>
+        <h1 id="tSolved" tabindex="-1">Let's fix that.</h1>
+        <p class="lead" id="solvedLead">Here is what Vecancy Tracker does about it.</p>
+        <ul class="fixes" id="fixes"></ul>
+        <div class="actions"><button class="btn btn-plain" type="button" data-back="vProblem">Back</button><span class="grow"></span><button class="btn btn-main" type="button" data-goto="vCreate">Create my account</button></div>
+      </section>
+
+      <!-- GET STARTED 4: create the account -->
+      <section class="view" id="vCreate" hidden aria-labelledby="tCreate">
+        <div class="dots" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+        <h1 id="tCreate" tabindex="-1">Create your account</h1>
+        <p class="lead">Your email is how you log in.</p>
+        <form id="createForm" novalidate hidden>
+          <label class="field"><span>Email</span><input type="email" id="cEmail" autocomplete="email" placeholder="you@example.com" required></label>
+          <label class="field"><span>Password</span><span class="pw"><input type="password" id="cPass" autocomplete="new-password" placeholder="At least 8 characters"><button type="button" data-show="cPass">Show</button></span></label>
+          <button class="btn btn-main btn-wide" type="submit" id="createBtn" style="margin-top:20px">Create account</button>
+        </form>
+        <div id="createHosted" hidden></div>
+        <p class="msg" id="cMsg" role="status"></p>
+        <p class="foot">Already have an account? <button type="button" data-goto="login">Log in</button></p>
+      </section>
+
+      <!-- LOG IN: role first (explanation under it), then the remembered account or another one -->
+      <section class="view view-login" id="vLogin" hidden aria-labelledby="tLogin">
+        <div class="login-head"><h1 id="tLogin" tabindex="-1">Log in</h1>
+        <p class="lead" id="loginLead">Choose your role, then how you log in.</p></div>
+        <div class="login-cols">
+        <div class="login-col">
+        <p class="col-title"><span>1</span> Your role</p>
+        <div class="roles" id="roles" role="radiogroup" aria-label="Your role">
+          <div class="role" data-role="admin.html" style="--c:#4f46e5"><button class="role-head" type="button" role="radio" aria-checked="false"><svg class="r-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="7" rx="2"/><rect x="13" y="4" width="8" height="7" rx="2"/><rect x="3" y="13" width="8" height="7" rx="2"/><rect x="13" y="13" width="8" height="7" rx="2"/></svg><b>Branch Admin</b><span class="radio"></span></button>
+            <div class="role-more"><div><ul><li>Manage your own dormitory: rooms, beds, tenants, reservations and check-outs.</li><li>Share a view-only page with viewers and connect to a Super Admin if you want.</li><li>You need: your own account.</li></ul></div></div></div>
+          <div class="role" data-role="viewer.html" style="--c:#0e9f6e"><button class="role-head" type="button" role="radio" aria-checked="false"><svg class="r-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><b>Dormitory Viewer</b><span class="radio"></span></button>
+            <div class="role-more"><div><ul><li>See one dorm's live board of free and taken beds. View only, no names.</li><li>Good for marketing agents and staff who answer "is there a bed?"</li><li>You need: the dorm code and password from that dorm's admin.</li></ul></div></div></div>
+          <div class="role" data-role="superadmin.html" style="--c:#b7791f"><button class="role-head" type="button" role="radio" aria-checked="false"><svg class="r-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><b>Super Admin</b><span class="radio"></span></button>
+            <div class="role-more"><div><ul><li>Watch every connected branch: occupancy, risk levels, history and forecasts.</li><li>Approve branch requests and manage the dormitory directory.</li><li>You need: a Super Admin server (you create it the first time).</li></ul></div></div></div>
+          <div class="role" data-role="marketing.html" style="--c:#db2777"><button class="role-head" type="button" role="radio" aria-checked="false"><svg class="r-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><b>Marketing Directory</b><span class="radio"></span></button>
+            <div class="role-more"><div><ul><li>Browse the dorms of a Super Admin that have free beds. View only.</li><li>Open a dorm's live board straight from the list when you're approved.</li><li>You need: the server code and password from the Super Admin.</li></ul></div></div></div>
+        </div>
+
+        </div>
+        <div class="login-col">
+        <p class="col-title"><span>2</span> Your account</p>
+        <!-- remembered on this computer -->
+        <div id="paneMe" hidden>
+          <div class="acct"><span class="av" id="meAv"></span><div><small id="meKind">Email · remembered on this computer</small><b id="meName"></b></div><span class="ok" aria-hidden="true">✓</span></div>
+          <button class="other-acct" type="button" id="otherBtn">Or choose another account</button>
+        </div>
+        <!-- how to log in: Google or email (A-0001) -->
+        <div id="paneMethod" hidden>
+          <div class="methods" role="radiogroup" aria-label="How you log in">
+            <button class="method" type="button" role="radio" aria-checked="false" data-method="google"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1A10 10 0 0 0 2 12c0 1.6.4 3.1 1.1 4.6z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 5.9 12 5.9z"/></svg><span>Continue with Google</span></button>
+            <span class="or" aria-hidden="true">or</span>
+            <button class="method" type="button" role="radio" aria-checked="true" data-method="email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span>Continue with email</span></button>
+          </div>
+          <p class="note" id="googleNote" hidden>Google sign-in works on the online (hosted) app. On this computer's test server, use your email.</p>
+        </div>
+        <!-- another account -->
+        <form id="loginForm" novalidate hidden>
+          <label class="field" style="margin-top:0"><span>Email</span><input type="email" id="lEmail" autocomplete="email" placeholder="you@example.com"></label>
+          <label class="field"><span>Password</span><span class="pw"><input type="password" id="lPass" autocomplete="current-password" placeholder="Your password"><button type="button" data-show="lPass">Show</button></span></label>
+          <div class="quick" id="quick"></div>
+          <p class="note" id="easyNote" hidden>Test mode on this computer: any password works, and a new email gets its own empty account.</p>
+        </form>
+        <div id="loginHosted" hidden><div id="hostedMount"></div></div>
+
+        <button class="btn btn-main btn-wide" type="button" id="loginBtn" style="margin-top:20px" disabled>Choose a role first</button>
+        <p class="msg" id="lMsg" role="status"></p>
+        <p class="foot">New here? <button type="button" data-goto="vSource">Get started</button></p>
+        </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+</div>
+<script src="auth-ui.js"></script>
+<script src="login.js"></script>
+</body>
+</html>
